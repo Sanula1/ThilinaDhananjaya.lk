@@ -147,4 +147,12 @@ export class AttendanceController {
   getAllWatchSessions() {
     return this.attendanceService.getAllWatchSessions();
   }
+
+  /** Admin: watch sessions for a specific class */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @Get('watch-sessions/class/:classId')
+  getClassWatchSessions(@Param('classId') classId: string) {
+    return this.attendanceService.getWatchSessionsByClass(classId);
+  }
 }

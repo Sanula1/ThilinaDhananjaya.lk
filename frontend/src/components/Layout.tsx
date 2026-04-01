@@ -132,8 +132,6 @@ export default function Layout() {
             <NavItem to="/admin/students" icon={icons.students} label="Students" />
             <NavItem to="/admin/classes" icon={icons.classes} label="Manage Classes" />
             <NavItem to="/admin/slips" icon={icons.slips} label="Payment Slips" />
-            <NavItem to="/admin/attendance" icon={icons.attend} label="Attendance" />
-            <NavItem to="/admin/recordings" icon={icons.recordings} label="Recordings" />
           </>
         )}
 

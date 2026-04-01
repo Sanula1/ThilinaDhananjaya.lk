@@ -3,6 +3,15 @@ import { useParams, Link } from 'react-router-dom';
 import api from '../../lib/api';
 
 const VISIBILITY_OPTIONS = ['ANYONE', 'STUDENTS_ONLY', 'PAID_ONLY', 'PRIVATE', 'INACTIVE'];
+
+function fmtTime(sec: number): string {
+  if (!sec || sec <= 0) return '—';
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = Math.floor(sec % 60);
+  if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const statusBadge = (s: string) => {
   const map: Record<string, string> = {
@@ -49,19 +58,19 @@ export default function AdminClassDetail() {
   const [enrollId, setEnrollId] = useState('');
   const [enrolling, setEnrolling] = useState(false);
 
-  // Attendance
-  const [attendance, setAttendance] = useState<any[]>([]);
+  // Watch Sessions
+  const [watchSessions, setWatchSessions] = useState<any[]>([]);
 
   const loadClass = () => api.get(`/classes/${id}`).then(r => setCls(r.data)).catch(() => {});
   const loadMonths = () => api.get(`/classes/${id}/months`).then(r => setMonths(r.data)).catch(() => {});
   const loadRecordings = () => api.get(`/classes/${id}/recordings`).then(r => setRecordings(r.data)).catch(() => {});
   const loadEnrollments = () => api.get(`/enrollments/class/${id}`).then(r => setEnrollments(r.data || [])).catch(() => {});
   const loadStudents = () => api.get('/users/students').then(r => setAllStudents(r.data || [])).catch(() => {});
-  const loadAttendance = () => api.get('/attendance').then(r => setAttendance(r.data || [])).catch(() => {});
+  const loadWatchSessions = () => api.get(`/attendance/watch-sessions/class/${id}`).then(r => setWatchSessions(r.data || [])).catch(() => {});
 
   useEffect(() => {
     setLoading(true);
-    Promise.all([loadClass(), loadMonths(), loadRecordings(), loadEnrollments(), loadStudents(), loadAttendance()])
+    Promise.all([loadClass(), loadMonths(), loadRecordings(), loadEnrollments(), loadStudents(), loadWatchSessions()])
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -136,10 +145,6 @@ export default function AdminClassDetail() {
   const availableStudents = allStudents.filter((s: any) => !enrolledIds.has(s.id));
   const filteredRecs = filterMonth ? recordings.filter((r: any) => r.monthId === filterMonth) : recordings;
 
-  // Filter attendance by this class's recordings
-  const recIds = new Set(recordings.map((r: any) => r.id));
-  const classAttendance = attendance.filter((a: any) => recIds.has(a.recordingId));
-
   if (loading) return (
     <div className="flex items-center justify-center h-64">
       <div className="w-8 h-8 rounded-full border-3 border-blue-600 border-t-transparent animate-spin" />
@@ -201,7 +206,7 @@ export default function AdminClassDetail() {
             {key === 'months' && <span className="ml-1.5 text-slate-400">({months.length})</span>}
             {key === 'recordings' && <span className="ml-1.5 text-slate-400">({recordings.length})</span>}
             {key === 'students' && <span className="ml-1.5 text-slate-400">({enrollments.length})</span>}
-            {key === 'attendance' && <span className="ml-1.5 text-slate-400">({classAttendance.length})</span>}
+            {key === 'attendance' && <span className="ml-1.5 text-slate-400">({watchSessions.length})</span>}
           </button>
         ))}
       </div>
@@ -451,8 +456,8 @@ export default function AdminClassDetail() {
       {/* ═══════════════ ATTENDANCE TAB ═══════════════ */}
       {tab === 'attendance' && (
         <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
-          {classAttendance.length === 0 ? (
-            <div className="p-8 text-center text-sm text-slate-400">No attendance records for this class yet. Attendance is recorded when students watch recordings.</div>
+          {watchSessions.length === 0 ? (
+            <div className="p-8 text-center text-sm text-slate-400">No watch sessions for this class yet. Sessions are recorded when students watch recordings.</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -461,28 +466,39 @@ export default function AdminClassDetail() {
                     <th className="text-left px-4 py-3 font-medium text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Student</th>
                     <th className="text-left px-4 py-3 font-medium text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Recording</th>
                     <th className="text-left px-4 py-3 font-medium text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Date</th>
-                    <th className="text-left px-4 py-3 font-medium text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Status</th>
                     <th className="text-left px-4 py-3 font-medium text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Watched</th>
+                    <th className="text-left px-4 py-3 font-medium text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                  {classAttendance.slice(0, 200).map((a: any) => {
-                    const rec = recordings.find((r: any) => r.id === a.recordingId);
-                    return (
-                      <tr key={a.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-700/30 transition">
-                        <td className="px-4 py-3">
-                          <p className="font-medium text-slate-800 dark:text-slate-100">{a.user?.profile?.fullName || '—'}</p>
-                          <p className="text-xs text-slate-400">{a.user?.email}</p>
-                        </td>
-                        <td className="px-4 py-3 text-slate-500 dark:text-slate-400 text-sm">{rec?.title || a.eventName || '—'}</td>
-                        <td className="px-4 py-3 text-slate-400 dark:text-slate-500 text-xs">{a.createdAt ? new Date(a.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</td>
-                        <td className="px-4 py-3">
-                          <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${a.status === 'COMPLETED' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : a.status === 'INCOMPLETE' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'}`}>{a.status}</span>
-                        </td>
-                        <td className="px-4 py-3 text-slate-400 text-xs">{a.watchedSec ? `${Math.round(a.watchedSec / 60)}m` : '—'}</td>
-                      </tr>
-                    );
-                  })}
+                  {watchSessions.map((s: any) => (
+                    <tr key={s.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-700/30 transition">
+                      <td className="px-4 py-3">
+                        <p className="font-medium text-slate-800 dark:text-slate-100">{s.user?.profile?.fullName || '—'}</p>
+                        <p className="text-xs text-slate-400">{s.user?.email}</p>
+                      </td>
+                      <td className="px-4 py-3">
+                        <p className="text-slate-600 dark:text-slate-300">{s.recording?.title || '—'}</p>
+                        <p className="text-xs text-slate-400">{s.recording?.month?.name || '—'}</p>
+                      </td>
+                      <td className="px-4 py-3 text-slate-400 dark:text-slate-500 text-xs">
+                        {s.startedAt ? new Date(s.startedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
+                        <br />
+                        <span className="text-slate-300 dark:text-slate-600">
+                          {s.startedAt ? new Date(s.startedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : ''}
+                          {s.endedAt ? ` – ${new Date(s.endedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}` : ''}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 font-medium text-slate-700 dark:text-slate-200">{fmtTime(s.totalWatchedSec)}</td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
+                          s.status === 'ENDED' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                          s.status === 'WATCHING' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
+                          'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+                        }`}>{s.status}</span>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>

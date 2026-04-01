@@ -259,4 +259,26 @@ export class AttendanceService {
       orderBy: { startedAt: 'desc' },
     });
   }
+
+  /** Admin: get watch sessions for all recordings in a class */
+  async getWatchSessionsByClass(classId: string) {
+    return this.prisma.watchSession.findMany({
+      where: {
+        recording: { month: { classId } },
+      },
+      include: {
+        user: {
+          include: { profile: { select: { fullName: true, instituteId: true } } },
+        },
+        recording: {
+          select: {
+            title: true,
+            month: { select: { name: true } },
+          },
+        },
+      },
+      orderBy: { startedAt: 'desc' },
+      take: 500,
+    });
+  }
 }

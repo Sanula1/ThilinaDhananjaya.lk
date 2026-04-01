@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../lib/api';
-import VideoPlayer, { SessionState, fmtTime } from '../components/VideoPlayer';
+import type { SessionState } from '../components/VideoPlayer';
+import VideoPlayer, { fmtTime } from '../components/VideoPlayer';
 
 export default function RecordingPlayerPage() {
   const { id } = useParams();
