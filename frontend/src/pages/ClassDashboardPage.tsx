@@ -144,25 +144,7 @@ export default function ClassDashboardPage() {
           </div>
         </button>
 
-        {/* Attendance */}
-        <button
-          onClick={() => navigate(`/classes/${id}/watch-history`)}
-          className="group bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm hover:border-emerald-200 dark:hover:border-emerald-700 hover:shadow-md transition-all p-5 text-left"
-        >
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/25">
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.7}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
-            </div>
-            <div className="flex-1">
-              <p className="font-bold text-slate-800 dark:text-slate-100 text-sm">Attendance</p>
-              <p className="text-xs text-slate-500 dark:text-slate-400">View watch history records</p>
-            </div>
-            <svg className="w-4 h-4 text-slate-300 group-hover:text-emerald-500 group-hover:translate-x-0.5 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">Track student progress</span>
-          </div>
-        </button>
+
       </div>
 
       {/* Recent recordings from latest month */}

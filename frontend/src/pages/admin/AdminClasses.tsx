@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import api from '../../lib/api';
 
@@ -68,10 +69,11 @@ export default function AdminClasses() {
       </div>
 
       {/* Modal */}
-      {showForm && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowForm(false)}>
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-700 sticky top-0 bg-white dark:bg-slate-800 z-10 rounded-t-2xl">
+      {showForm && createPortal(
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm overflow-y-auto" onClick={() => setShowForm(false)}>
+          <div className="min-h-full flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-700 rounded-t-2xl">
               <div>
                 <h2 className="font-bold text-slate-800 dark:text-slate-100">{editingClass ? 'Edit Class' : 'New Class'}</h2>
                 <p className="text-xs text-slate-400 mt-0.5">{editingClass ? 'Update class details' : 'Create a new class'}</p>
@@ -140,8 +142,9 @@ export default function AdminClasses() {
               </div>
             </form>
           </div>
+          </div>
         </div>
-      )}
+      , document.body)}
 
       {/* Table */}
       <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
@@ -185,8 +188,8 @@ export default function AdminClasses() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-slate-500 dark:text-slate-400 text-sm">{cls.subject || '—'}</td>
-                    <td className="px-4 py-3 text-right text-slate-700 dark:text-slate-300 font-semibold text-sm">{cls.monthlyFee != null ? `Rs. ${Number(cls.monthlyFee).toLocaleString()}` : '—'}</td>
+                    <td className="px-4 py-3 text-slate-500 dark:text-slate-400 text-sm">{cls.subject || 'ï¿½'}</td>
+                    <td className="px-4 py-3 text-right text-slate-700 dark:text-slate-300 font-semibold text-sm">{cls.monthlyFee != null ? `Rs. ${Number(cls.monthlyFee).toLocaleString()}` : 'ï¿½'}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${statusBadge(cls.status || 'ANYONE')}`}>
                         <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70" />
@@ -219,3 +222,4 @@ export default function AdminClasses() {
     </div>
   );
 }
+

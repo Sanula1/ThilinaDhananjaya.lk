@@ -78,7 +78,7 @@ export default function Layout() {
   const hour = time.getHours();
   const greeting = hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : 'Good Evening';
 
-  const isClassDetail = /^\/classes\/[^/]+(\/(dashboard|watch-history)(\/.*)?)?\.?/.test(location.pathname) && location.pathname.startsWith('/classes/');
+  const isClassDetail = /^\/classes\/[^/]+(\/(dashboard)(\/.*)?)?$/.test(location.pathname) && location.pathname.startsWith('/classes/');
   const classId = isClassDetail ? location.pathname.split('/')[2] : null;
 
   /* -------- Sidebar Content -------- */
@@ -116,7 +116,6 @@ export default function Layout() {
             </SideSection>
             <SideSection label="Classes">
               <NavItem to={`/classes/${classId}/dashboard/class-recordings`} icon={icons.recordings} label="Class Recording" exact />
-              <NavItem to={`/classes/${classId}/watch-history`} icon={icons.attend} label="Attendance" exact />
             </SideSection>
           </>
         ) : (
@@ -207,7 +206,7 @@ export default function Layout() {
       )}
 
       {/* Main area */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0">
         {/* Top header */}
         <header className="bg-white dark:bg-[#0f172a] h-14 flex items-center justify-between px-4 sm:px-6 flex-shrink-0 shadow-sm dark:shadow-black/20 z-10 border-b border-slate-100 dark:border-slate-800 transition-colors duration-300">
           {/* Left */}

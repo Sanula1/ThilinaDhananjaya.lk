@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import api from '../../lib/api';
 
 const VISIBILITY_OPTIONS = ['ANYONE', 'STUDENTS_ONLY', 'PAID_ONLY', 'PRIVATE', 'INACTIVE'];
@@ -108,10 +109,11 @@ export default function AdminRecordingHistory() {
       </div>
 
       {/* Modal */}
-      {showForm && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowForm(false)}>
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-700 sticky top-0 bg-white dark:bg-slate-800 z-10">
+      {showForm && createPortal(
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm overflow-y-auto" onClick={() => setShowForm(false)}>
+          <div className="min-h-full flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-700 rounded-t-2xl">
               <div>
                 <h2 className="font-bold text-slate-800 dark:text-slate-100">{editingRec ? 'Edit Recording' : 'Add Recording'}</h2>
                 <p className="text-xs text-slate-400 mt-0.5">{editingRec ? 'Update recording details' : 'Add a new video recording'}</p>
@@ -200,8 +202,9 @@ export default function AdminRecordingHistory() {
               </div>
             </form>
           </div>
+          </div>
         </div>
-      )}
+      , document.body)}
 
       {/* Filters */}
       <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm p-4">
@@ -361,3 +364,4 @@ export default function AdminRecordingHistory() {
     </div>
   );
 }
+

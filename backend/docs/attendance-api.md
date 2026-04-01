@@ -74,7 +74,24 @@ Manually mark attendance for a student.
 ### `GET /attendance`
 > Auth: Admin
 
-Returns the latest 100 attendance records across all students and recordings.
+Returns attendance records (up to 500). All query parameters are optional — omit them to get all records.
+
+**Query Parameters**
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `classId` | string | Filter by class |
+| `recordingId` | string | Filter by recording |
+| `status` | string | Filter by status: `COMPLETED`, `INCOMPLETE`, or `MANUAL` |
+
+**Example Requests**
+```http
+GET /api/attendance
+GET /api/attendance?classId=ee134162-3b4e-430b-9b40-6393a6b92689
+GET /api/attendance?status=COMPLETED
+GET /api/attendance?classId=ee134162-...&status=INCOMPLETE
+GET /api/attendance?recordingId=2ecb26f8-1c6f-46ed-85f9-616d2526a1c9
+```
 
 **Response** — array of attendance records including student profile and recording/class info.
 

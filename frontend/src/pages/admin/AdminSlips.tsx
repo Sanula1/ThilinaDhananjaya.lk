@@ -1,4 +1,5 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import api from '../../lib/api';
 
 export default function AdminSlips() {
@@ -60,13 +61,13 @@ export default function AdminSlips() {
       </div>
 
       {/* Slip preview modal */}
-      {preview && (
+      {preview && createPortal(
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setPreview(null)}>
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-sm w-full" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-700">
               <div>
                 <p className="font-bold text-slate-800 dark:text-slate-100">{preview.user?.profile?.fullName || preview.user?.email}</p>
-                <p className="text-xs text-slate-400 mt-0.5">{preview.month?.class?.name} · {preview.month?.name}</p>
+                <p className="text-xs text-slate-400 mt-0.5">{preview.month?.class?.name} � {preview.month?.name}</p>
               </div>
               <button onClick={() => setPreview(null)} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 transition">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -83,7 +84,7 @@ export default function AdminSlips() {
             )}
           </div>
         </div>
-      )}
+      , document.body)}
 
       {/* Table */}
       <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
@@ -114,13 +115,13 @@ export default function AdminSlips() {
                 {filtered.map((p: any) => (
                   <tr key={p.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-700/30 transition">
                     <td className="px-4 py-3">
-                      <p className="font-semibold text-slate-800 dark:text-slate-100 text-sm">{p.user?.profile?.fullName || '—'}</p>
+                      <p className="font-semibold text-slate-800 dark:text-slate-100 text-sm">{p.user?.profile?.fullName || '�'}</p>
                       <p className="text-xs text-slate-400">{p.user?.email}</p>
                     </td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300 text-sm">{p.month?.class?.name || '—'}</td>
-                    <td className="px-4 py-3 text-slate-500 dark:text-slate-400 text-sm">{p.month?.name || '—'}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300 text-sm">{p.month?.class?.name || '�'}</td>
+                    <td className="px-4 py-3 text-slate-500 dark:text-slate-400 text-sm">{p.month?.name || '�'}</td>
                     <td className="px-4 py-3 text-slate-500 dark:text-slate-400 text-sm">{p.type}</td>
-                    <td className="px-4 py-3 text-slate-400 dark:text-slate-500 text-xs">{p.createdAt ? new Date(p.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</td>
+                    <td className="px-4 py-3 text-slate-400 dark:text-slate-500 text-xs">{p.createdAt ? new Date(p.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '�'}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${statusBadge(p.status)}`}>
                         <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70" />
@@ -157,3 +158,4 @@ export default function AdminSlips() {
     </div>
   );
 }
+

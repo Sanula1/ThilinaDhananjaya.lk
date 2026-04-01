@@ -75,15 +75,30 @@ export class AttendanceService {
     });
   }
 
-  /** Admin: get all attendance records */
-  async getAll() {
+  /** Admin: get all attendance records with optional filters */
+  async getAll(filters?: { classId?: string; recordingId?: string; status?: string }) {
+    const where: any = {};
+
+    if (filters?.recordingId) {
+      where.recordingId = filters.recordingId;
+    }
+
+    if (filters?.status) {
+      where.status = filters.status;
+    }
+
+    if (filters?.classId) {
+      where.recording = { month: { classId: filters.classId } };
+    }
+
     return this.prisma.attendance.findMany({
+      where,
       include: {
         user: { include: { profile: { select: { fullName: true, instituteId: true } } } },
         recording: { select: { title: true, month: { select: { name: true, class: { select: { name: true } } } } } },
       },
       orderBy: { createdAt: 'desc' },
-      take: 100,
+      take: 500,
     });
   }
 

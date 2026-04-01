@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams, Link } from 'react-router-dom';
 import api from '../../lib/api';
 
@@ -223,10 +224,11 @@ export default function AdminClassDetail() {
             </button>
           </div>
 
-          {showMonthForm && (
-            <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowMonthForm(false)}>
+          {showMonthForm && createPortal(
+            <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm overflow-y-auto" onClick={() => setShowMonthForm(false)}>
+              <div className="min-h-full flex items-center justify-center p-4">
               <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-sm" onClick={e => e.stopPropagation()}>
-                <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-700">
+                <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-700 rounded-t-2xl">
                   <div>
                     <h2 className="font-bold text-slate-800 dark:text-slate-100">{editingMonth ? 'Edit Month' : 'New Month'}</h2>
                     <p className="text-xs text-slate-400 mt-0.5">{editingMonth ? 'Update month details' : 'Add a new month to organize recordings'}</p>
@@ -262,8 +264,9 @@ export default function AdminClassDetail() {
                   </div>
                 </form>
               </div>
+              </div>
             </div>
-          )}
+          , document.body)}
 
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
             {months.length === 0 ? (
@@ -343,10 +346,11 @@ export default function AdminClassDetail() {
           </div>
 
           {/* Rec form modal */}
-          {showRecForm && (
-            <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowRecForm(false)}>
-              <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-                <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-700 sticky top-0 bg-white dark:bg-slate-800 z-10 rounded-t-2xl">
+          {showRecForm && createPortal(
+            <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm overflow-y-auto" onClick={() => setShowRecForm(false)}>
+              <div className="min-h-full flex items-center justify-center p-4">
+              <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+                <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-700 rounded-t-2xl">
                   <div>
                     <h2 className="font-bold text-slate-800 dark:text-slate-100">{editingRec ? 'Edit Recording' : 'New Recording'}</h2>
                     <p className="text-xs text-slate-400 mt-0.5">{editingRec ? 'Update recording details' : 'Add a new recording to this class'}</p>
@@ -390,8 +394,9 @@ export default function AdminClassDetail() {
                   </div>
                 </form>
               </div>
+              </div>
             </div>
-          )}
+          , document.body)}
 
           {/* Recordings grid */}
           {filteredRecs.length === 0 ? (
@@ -584,3 +589,4 @@ export default function AdminClassDetail() {
     </div>
   );
 }
+

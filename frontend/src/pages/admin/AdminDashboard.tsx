@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../lib/api';
 
@@ -41,7 +41,7 @@ export default function AdminDashboard() {
         <div className="relative z-10">
           <p className="text-blue-300 text-xs font-semibold uppercase tracking-widest mb-1">Admin Panel</p>
           <h1 className="text-2xl md:text-3xl font-bold text-white">LMS Dashboard</h1>
-          <p className="text-slate-400 text-sm mt-1.5 max-w-md">Monitor your platform — students, classes, payments, and recordings at a glance.</p>
+          <p className="text-slate-400 text-sm mt-1.5 max-w-md">Monitor your platform � students, classes, payments, and recordings at a glance.</p>
         </div>
       </div>
 
@@ -80,3 +80,4 @@ export default function AdminDashboard() {
     </div>
   );
 }
+
