@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import api from '../../lib/api';
+import StickyDataTable, { type StickyColumn } from '../../components/StickyDataTable';
 
 function fmtTime(sec: number): string {
-  if (!sec || sec <= 0) return '�';
+  if (!sec || sec <= 0) return '-';
   const h = Math.floor(sec / 3600);
   const m = Math.floor((sec % 3600) / 60);
   const s = Math.floor(sec % 60);
@@ -23,15 +24,10 @@ export default function AdminAttendance() {
   const [error, setError] = useState('');
   const [tab, setTab] = useState<'sessions' | 'attendance'>('sessions');
   const [records, setRecords] = useState<any[]>([]);
-  const [filterRecording, setFilterRecording] = useState('');
   const [filterDate, setFilterDate] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
-  const [filterClass, setFilterClass] = useState('');
-  const [recClassId, setRecClassId] = useState('');
-  const [recRecordingId, setRecRecordingId] = useState('');
   const [recStatus, setRecStatus] = useState('');
-  const [recFetching, setRecFetching] = useState(false);
-  const [allRecordings, setAllRecordings] = useState<any[]>([]);
+  const [recDate, setRecDate] = useState('');
 
   useEffect(() => {
     Promise.all([
@@ -39,19 +35,8 @@ export default function AdminAttendance() {
       api.get('/users/students').then(r => setStudents(r.data || [])).catch(() => {}),
       api.get('/attendance/watch-sessions').then(r => setSessions(r.data || [])).catch(() => {}),
       api.get('/attendance').then(r => setRecords(r.data || [])).catch(() => {}),
-      api.get('/recordings').then(r => setAllRecordings(r.data || [])).catch(() => {}),
     ]).finally(() => setFetching(false));
   }, []);
-
-  useEffect(() => {
-    if (!recClassId && !recRecordingId && !recStatus) return;
-    setRecFetching(true);
-    const params: Record<string, string> = {};
-    if (recClassId) params.classId = recClassId;
-    if (recRecordingId) params.recordingId = recRecordingId;
-    if (recStatus) params.status = recStatus;
-    api.get('/attendance', { params }).then(r => setRecords(r.data || [])).catch(() => setRecords([])).finally(() => setRecFetching(false));
-  }, [recClassId, recRecordingId, recStatus]);
 
   const update = (k: string, v: string) => setForm(p => ({ ...p, [k]: v }));
 
@@ -77,12 +62,107 @@ export default function AdminAttendance() {
     return map[s] || '';
   };
 
+  const sessionColumns: readonly StickyColumn<any>[] = [
+    {
+      id: 'student',
+      label: 'Student',
+      minWidth: 220,
+      render: (s) => (
+        <>
+          <p className="font-medium text-slate-800 dark:text-slate-100">{s.user?.profile?.fullName || '-'}</p>
+          <p className="text-xs text-slate-400">{s.user?.email}</p>
+        </>
+      ),
+    },
+    {
+      id: 'recording',
+      label: 'Recording',
+      minWidth: 260,
+      render: (s) => (
+        <>
+          <p className="text-slate-600 dark:text-slate-300">{s.recording?.title || '-'}</p>
+          <p className="text-xs text-slate-400">{s.recording?.month?.class?.name} - {s.recording?.month?.name}</p>
+        </>
+      ),
+    },
+    {
+      id: 'date',
+      label: 'Date',
+      minWidth: 130,
+      render: (s) => (
+        <span className="text-slate-600 dark:text-slate-300 text-sm font-medium">
+          {s.startedAt ? new Date(s.startedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}
+        </span>
+      ),
+    },
+    {
+      id: 'time',
+      label: 'Time',
+      minWidth: 170,
+      render: (s) => (
+        <span className="text-slate-600 dark:text-slate-300 text-sm font-medium">
+          {s.startedAt ? new Date(s.startedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '-'}
+          {s.endedAt ? ` - ${new Date(s.endedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}` : ''}
+        </span>
+      ),
+    },
+    { id: 'watched', label: 'Watched', minWidth: 100, render: (s) => <span className="font-medium text-slate-700 dark:text-slate-200">{fmtTime(s.totalWatchedSec)}</span> },
+    {
+      id: 'status',
+      label: 'Status',
+      minWidth: 100,
+      render: (s) => (
+        <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
+          s.status === 'ENDED' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+          s.status === 'WATCHING' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
+          'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+        }`}>{s.status}</span>
+      ),
+    },
+  ];
+
+  const recordColumns: readonly StickyColumn<any>[] = [
+    {
+      id: 'student',
+      label: 'Student',
+      minWidth: 220,
+      render: (rec) => (
+        <>
+          <p className="font-semibold text-slate-800 dark:text-slate-100 text-sm">{rec.user?.profile?.fullName || '-'}</p>
+          <p className="text-xs text-slate-400">{rec.user?.email}</p>
+        </>
+      ),
+    },
+    {
+      id: 'recordingClass',
+      label: 'Recording / Class',
+      minWidth: 260,
+      render: (rec) => (
+        <>
+          <p className="text-slate-600 dark:text-slate-300 text-sm">{rec.recording?.title || rec.eventName || '-'}</p>
+          <p className="text-xs text-slate-400">{rec.recording?.month?.class?.name || '-'}</p>
+        </>
+      ),
+    },
+    { id: 'date', label: 'Date', minWidth: 120, render: (rec) => <span className="text-slate-600 dark:text-slate-300 text-sm font-medium">{rec.createdAt ? new Date(rec.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}</span> },
+    {
+      id: 'status',
+      label: 'Status',
+      minWidth: 120,
+      render: (rec) => (
+        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${statusBadge(rec.status)}`}>
+          <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70" />{rec.status}
+        </span>
+      ),
+    },
+  ];
+
   return (
     <div className="space-y-5 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-slate-800 dark:text-slate-100">Attendance</h1>
-          <p className="text-slate-500 dark:text-slate-400 text-sm mt-0.5">{sessions.length} watch sessions � {records.length} attendance records</p>
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-0.5">{sessions.length} watch sessions - {records.length} attendance records</p>
         </div>
         <button onClick={() => { setShowForm(true); setError(''); setSuccess(''); }}
           className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white text-sm font-semibold hover:from-blue-600 hover:to-blue-700 transition shadow-lg shadow-blue-500/25 flex items-center gap-1.5">
@@ -154,26 +234,20 @@ export default function AdminAttendance() {
       , document.body)}
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl p-1 border border-slate-200 dark:border-slate-700 w-fit">
+      <div className="flex gap-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl p-1 border border-slate-200 dark:border-slate-700 w-full">
         <button onClick={() => setTab('sessions')}
-          className={`px-4 py-2 rounded-lg text-xs font-semibold transition ${tab === 'sessions' ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}>
+          className={`flex-1 px-4 py-2 rounded-lg text-xs font-semibold transition ${tab === 'sessions' ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}>
           Watch Sessions
         </button>
         <button onClick={() => setTab('attendance')}
-          className={`px-4 py-2 rounded-lg text-xs font-semibold transition ${tab === 'attendance' ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}>
+          className={`flex-1 px-4 py-2 rounded-lg text-xs font-semibold transition ${tab === 'attendance' ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}>
           Legacy Attendance
         </button>
       </div>
 
       {/* Watch Sessions Table */}
       {tab === 'sessions' && (() => {
-        const classFilteredSessions = filterClass ? sessions.filter((s: any) => s.recording?.month?.class?.id === filterClass) : sessions;
-        const recordingOptions = Array.from(
-          new Map(classFilteredSessions.filter((s: any) => s.recording?.id).map((s: any) => [s.recording.id, s.recording.title])).entries()
-        );
         const filtered = sessions.filter((s: any) => {
-          if (filterRecording && s.recording?.id !== filterRecording) return false;
-          if (filterClass && s.recording?.month?.class?.id !== filterClass) return false;
           if (filterStatus && s.status !== filterStatus) return false;
           if (filterDate) {
             const d = s.startedAt ? new Date(s.startedAt).toISOString().split('T')[0] : '';
@@ -181,27 +255,11 @@ export default function AdminAttendance() {
           }
           return true;
         });
-        const hasFilters = filterRecording || filterDate || filterStatus || filterClass;
+        const hasFilters = filterDate || filterStatus;
         return (
         <>
           {/* Filter Bar */}
           <div className="flex flex-wrap gap-2 items-end">
-            <div className="flex flex-col gap-1 min-w-[160px]">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Class</label>
-              <select value={filterClass} onChange={e => { setFilterClass(e.target.value); setFilterRecording(''); }}
-                className="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30">
-                <option value="">All Classes</option>
-                {classes.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-            </div>
-            <div className="flex flex-col gap-1 min-w-[200px]">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Recording</label>
-              <select value={filterRecording} onChange={e => setFilterRecording(e.target.value)}
-                className="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30">
-                <option value="">All Recordings</option>
-                {recordingOptions.map(([id, title]) => <option key={id} value={id}>{title}</option>)}
-              </select>
-            </div>
             <div className="flex flex-col gap-1">
               <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Date</label>
               <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)}
@@ -218,7 +276,7 @@ export default function AdminAttendance() {
               </select>
             </div>
             {hasFilters && (
-              <button onClick={() => { setFilterRecording(''); setFilterDate(''); setFilterStatus(''); setFilterClass(''); }}
+              <button onClick={() => { setFilterDate(''); setFilterStatus(''); }}
                 className="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-600 text-xs font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition flex items-center gap-1.5">
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                 Clear
@@ -233,49 +291,12 @@ export default function AdminAttendance() {
           ) : filtered.length === 0 ? (
             <div className="p-8 text-center text-sm text-slate-400">{sessions.length === 0 ? 'No watch sessions yet' : 'No sessions match the selected filters'}</div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700">
-                    <th className="text-left px-4 py-3 font-medium text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Student</th>
-                    <th className="text-left px-4 py-3 font-medium text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Recording</th>
-                    <th className="text-left px-4 py-3 font-medium text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Date</th>
-                    <th className="text-left px-4 py-3 font-medium text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Watched</th>
-                    <th className="text-left px-4 py-3 font-medium text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                  {filtered.map((s: any) => (
-                    <tr key={s.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-700/30 transition">
-                      <td className="px-4 py-3">
-                        <p className="font-medium text-slate-800 dark:text-slate-100">{s.user?.profile?.fullName || '�'}</p>
-                        <p className="text-xs text-slate-400">{s.user?.email}</p>
-                      </td>
-                      <td className="px-4 py-3">
-                        <p className="text-slate-600 dark:text-slate-300">{s.recording?.title || '�'}</p>
-                        <p className="text-xs text-slate-400">{s.recording?.month?.class?.name} � {s.recording?.month?.name}</p>
-                      </td>
-                      <td className="px-4 py-3 text-slate-400 dark:text-slate-500 text-xs">
-                        {s.startedAt ? new Date(s.startedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '�'}
-                        <br />
-                        <span className="text-slate-300 dark:text-slate-600">
-                          {s.startedAt ? new Date(s.startedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : ''}
-                          {s.endedAt ? ` � ${new Date(s.endedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}` : ''}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 font-medium text-slate-700 dark:text-slate-200">{fmtTime(s.totalWatchedSec)}</td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
-                          s.status === 'ENDED' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-                          s.status === 'WATCHING' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
-                          'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
-                        }`}>{s.status}</span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <StickyDataTable
+              columns={sessionColumns}
+              rows={filtered}
+              getRowId={(row) => row.id}
+              tableHeight="calc(100vh - 440px)"
+            />
           )}
         </div>
         </>
@@ -284,29 +305,23 @@ export default function AdminAttendance() {
 
       {/* Legacy Attendance Table */}
       {tab === 'attendance' && (() => {
-        const recRecordingOptions = recClassId
-          ? allRecordings.filter((r: any) => r.month?.class?.id === recClassId)
-          : allRecordings;
-        const hasRecFilters = recClassId || recRecordingId || recStatus;
+        const filteredRecords = records.filter((rec: any) => {
+          if (recStatus && rec.status !== recStatus) return false;
+          if (recDate) {
+            const d = rec.createdAt ? new Date(rec.createdAt).toISOString().split('T')[0] : '';
+            if (d !== recDate) return false;
+          }
+          return true;
+        });
+        const hasRecFilters = recDate || recStatus;
         return (
           <>
             {/* Filter Bar */}
             <div className="flex flex-wrap gap-2 items-end">
-              <div className="flex flex-col gap-1 min-w-[160px]">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Class</label>
-                <select value={recClassId} onChange={e => { setRecClassId(e.target.value); setRecRecordingId(''); }}
-                  className="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30">
-                  <option value="">All Classes</option>
-                  {classes.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
-              </div>
-              <div className="flex flex-col gap-1 min-w-[200px]">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Recording</label>
-                <select value={recRecordingId} onChange={e => setRecRecordingId(e.target.value)}
-                  className="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30">
-                  <option value="">All Recordings</option>
-                  {recRecordingOptions.map((r: any) => <option key={r.id} value={r.id}>{r.title}</option>)}
-                </select>
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Date</label>
+                <input type="date" value={recDate} onChange={e => setRecDate(e.target.value)}
+                  className="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30" />
               </div>
               <div className="flex flex-col gap-1 min-w-[140px]">
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Status</label>
@@ -319,19 +334,19 @@ export default function AdminAttendance() {
                 </select>
               </div>
               {hasRecFilters && (
-                <button onClick={() => { setRecClassId(''); setRecRecordingId(''); setRecStatus(''); }}
+                <button onClick={() => { setRecDate(''); setRecStatus(''); }}
                   className="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-600 text-xs font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition flex items-center gap-1.5">
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                   Clear
                 </button>
               )}
-              <span className="ml-auto text-xs text-slate-400 self-end pb-2">{records.length} result{records.length !== 1 ? 's' : ''}</span>
+              <span className="ml-auto text-xs text-slate-400 self-end pb-2">{filteredRecords.length} result{filteredRecords.length !== 1 ? 's' : ''}</span>
             </div>
 
             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
-              {(fetching || recFetching) ? (
+              {fetching ? (
                 <div className="p-6 space-y-3">{[1,2,3].map(i => <div key={i} className="h-14 rounded-xl bg-slate-100 dark:bg-slate-700 animate-pulse" />)}</div>
-              ) : records.length === 0 ? (
+              ) : filteredRecords.length === 0 ? (
                 <div className="p-12 text-center">
                   <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center mx-auto mb-3">
                     <svg className="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
@@ -340,38 +355,12 @@ export default function AdminAttendance() {
                   <p className="text-xs text-slate-400 mt-1">{hasRecFilters ? 'Try adjusting or clearing the filters' : 'Add manual attendance using the button above'}</p>
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-100 dark:border-slate-700">
-                        <th className="text-left px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Student</th>
-                        <th className="text-left px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Recording / Class</th>
-                        <th className="text-left px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Date</th>
-                        <th className="text-left px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-50 dark:divide-slate-700">
-                      {records.map((rec: any) => (
-                        <tr key={rec.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-700/30 transition">
-                          <td className="px-4 py-3">
-                            <p className="font-semibold text-slate-800 dark:text-slate-100 text-sm">{rec.user?.profile?.fullName || '�'}</p>
-                            <p className="text-xs text-slate-400">{rec.user?.email}</p>
-                          </td>
-                          <td className="px-4 py-3">
-                            <p className="text-slate-600 dark:text-slate-300 text-sm">{rec.recording?.title || rec.eventName || '�'}</p>
-                            <p className="text-xs text-slate-400">{rec.recording?.month?.class?.name}</p>
-                          </td>
-                          <td className="px-4 py-3 text-slate-400 dark:text-slate-500 text-xs">{rec.createdAt ? new Date(rec.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '�'}</td>
-                          <td className="px-4 py-3">
-                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${statusBadge(rec.status)}`}>
-                              <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70" />{rec.status}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <StickyDataTable
+                  columns={recordColumns}
+                  rows={filteredRecords}
+                  getRowId={(row) => row.id}
+                  tableHeight="calc(100vh - 440px)"
+                />
               )}
             </div>
           </>
@@ -380,4 +369,5 @@ export default function AdminAttendance() {
     </div>
   );
 }
+
 

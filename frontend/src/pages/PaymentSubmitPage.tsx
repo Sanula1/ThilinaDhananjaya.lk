@@ -56,7 +56,7 @@ export default function PaymentSubmitPage() {
   };
 
   if (success) return (
-    <div className="max-w-md mx-auto mt-20 text-center animate-fade-in-up">
+    <div className="w-full mt-20 text-center animate-fade-in-up">
       <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-400 to-green-600 flex items-center justify-center mx-auto mb-5 shadow-lg shadow-emerald-500/30">
         <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
       </div>
@@ -66,7 +66,7 @@ export default function PaymentSubmitPage() {
   );
 
   return (
-    <div className="max-w-lg mx-auto space-y-6 animate-fade-in">
+    <div className="w-full space-y-6 animate-fade-in">
       <div>
         <h1 className="text-xl font-bold text-slate-800 dark:text-slate-100">Upload Payment Slip</h1>
         <p className="text-slate-500 dark:text-slate-400 text-sm mt-0.5">Submit your monthly payment receipt for verification</p>

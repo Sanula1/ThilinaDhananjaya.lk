@@ -1,12 +1,13 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useParams, Link } from 'react-router-dom';
 import api from '../../lib/api';
+import StickyDataTable, { type StickyColumn } from '../../components/StickyDataTable';
 
 const VISIBILITY_OPTIONS = ['ANYONE', 'STUDENTS_ONLY', 'PAID_ONLY', 'PRIVATE', 'INACTIVE'];
 
 function fmtTime(sec: number): string {
-  if (!sec || sec <= 0) return '—';
+  if (!sec || sec <= 0) return 'â€”';
   const h = Math.floor(sec / 3600);
   const m = Math.floor((sec % 3600) / 60);
   const s = Math.floor(sec % 60);
@@ -75,7 +76,7 @@ export default function AdminClassDetail() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  // ─── Month handlers ─────────────────────
+  // â”€â”€â”€ Month handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const openNewMonth = () => { setMonthForm({ ...emptyMonthForm }); setEditingMonth(null); setShowMonthForm(true); setMonthError(''); };
   const openEditMonth = (m: any) => {
     setMonthForm({ name: m.name, year: String(m.year), month: String(m.month), status: m.status || 'ANYONE' });
@@ -96,7 +97,7 @@ export default function AdminClassDetail() {
     await api.delete(`/classes/months/${mid}`).catch(() => {}); loadMonths(); loadRecordings();
   };
 
-  // ─── Recording handlers ─────────────────
+  // â”€â”€â”€ Recording handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const openNewRec = () => { setRecForm({ ...emptyRecForm }); setEditingRec(null); setShowRecForm(true); setRecError(''); };
   const openEditRec = (rec: any) => {
     setRecForm({
@@ -131,7 +132,7 @@ export default function AdminClassDetail() {
     await api.delete(`/recordings/${rid}`).catch(() => {}); loadRecordings();
   };
 
-  // ─── Enrollment handlers ────────────────
+  // â”€â”€â”€ Enrollment handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const handleEnroll = async () => {
     if (!enrollId) return; setEnrolling(true);
     try { await api.post('/enrollments', { userId: enrollId, classId: id }); setEnrollId(''); loadEnrollments(); }
@@ -145,6 +146,105 @@ export default function AdminClassDetail() {
   const enrolledIds = new Set(enrollments.map((e: any) => e.userId));
   const availableStudents = allStudents.filter((s: any) => !enrolledIds.has(s.id));
   const filteredRecs = filterMonth ? recordings.filter((r: any) => r.monthId === filterMonth) : recordings;
+
+  const monthColumns: readonly StickyColumn<any>[] = [
+    { id: 'name', label: 'Name', minWidth: 180, render: (m) => <span className="font-medium text-slate-800 dark:text-slate-100">{m.name}</span> },
+    { id: 'period', label: 'Period', minWidth: 140, render: (m) => <span className="text-slate-500 dark:text-slate-400">{MONTH_NAMES[(m.month || 1) - 1]} {m.year}</span> },
+    { id: 'recordings', label: 'Recordings', minWidth: 120, render: (m) => { const recCount = recordings.filter((r: any) => r.monthId === m.id).length; return <span className="text-slate-500 dark:text-slate-400">{recCount} recording{recCount !== 1 ? 's' : ''}</span>; } },
+    { id: 'visibility', label: 'Visibility', minWidth: 120, render: (m) => <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${statusBadge(m.status || 'ANYONE')}`}>{(m.status || 'ANYONE').replace(/_/g, ' ')}</span> },
+    {
+      id: 'actions',
+      label: 'Actions',
+      minWidth: 170,
+      align: 'right',
+      render: (m) => (
+        <div className="flex items-center justify-end gap-1.5">
+          <button onClick={() => openEditMonth(m)} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-xs font-semibold hover:bg-blue-100 dark:hover:bg-blue-900/40 transition">
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+            Edit
+          </button>
+          <button onClick={() => deleteMonth(m.id)} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400 text-xs font-semibold hover:bg-red-100 dark:hover:bg-red-900/40 transition">
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+            Delete
+          </button>
+        </div>
+      ),
+    },
+  ];
+
+  const enrollmentColumns: readonly StickyColumn<any>[] = [
+    {
+      id: 'student', label: 'Student', minWidth: 220,
+      render: (enr) => (
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+            {(enr.user?.profile?.fullName || enr.user?.email || '?')[0].toUpperCase()}
+          </div>
+          <span className="font-semibold text-slate-800 dark:text-slate-100">{enr.user?.profile?.fullName || '-'}</span>
+        </div>
+      ),
+    },
+    { id: 'email', label: 'Email', minWidth: 170, render: (enr) => <span className="text-slate-500 dark:text-slate-400">{enr.user?.email}</span> },
+    { id: 'institute', label: 'ID', minWidth: 90, render: (enr) => <span className="text-slate-400 dark:text-slate-500 text-xs font-mono">{enr.user?.profile?.instituteId || '-'}</span> },
+    { id: 'enrolled', label: 'Enrolled', minWidth: 90, render: (enr) => <span className="text-slate-400 dark:text-slate-500 text-xs">{enr.createdAt ? new Date(enr.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}</span> },
+    {
+      id: 'actions', label: 'Actions', minWidth: 120, align: 'right',
+      render: (enr) => (
+        <button onClick={() => handleUnenroll(enr.userId)} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400 text-xs font-semibold hover:bg-red-100 dark:hover:bg-red-900/40 transition">
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M13 7a4 4 0 11-8 0 4 4 0 018 0zM9 14a6 6 0 00-6 6v1h12v-1a6 6 0 00-6-6zM21 12h-6" /></svg>
+          Unenroll
+        </button>
+      ),
+    },
+  ];
+
+  const watchColumns: readonly StickyColumn<any>[] = [
+    {
+      id: 'student', label: 'Student', minWidth: 220,
+      render: (s) => (
+        <>
+          <p className="font-medium text-slate-800 dark:text-slate-100">{s.user?.profile?.fullName || '-'}</p>
+          <p className="text-xs text-slate-400">{s.user?.email}</p>
+        </>
+      ),
+    },
+    {
+      id: 'recording', label: 'Recording', minWidth: 240,
+      render: (s) => (
+        <>
+          <p className="text-slate-600 dark:text-slate-300">{s.recording?.title || '-'}</p>
+          <p className="text-xs text-slate-400">{s.recording?.month?.name || '-'}</p>
+        </>
+      ),
+    },
+    {
+      id: 'date', label: 'Date', minWidth: 170,
+      render: (s) => (
+        <span className="text-slate-400 dark:text-slate-500 text-xs">
+          {s.startedAt ? new Date(s.startedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}
+          <br />
+          <span className="text-slate-300 dark:text-slate-600">
+            {s.startedAt ? new Date(s.startedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : ''}
+            {s.endedAt ? ` - ${new Date(s.endedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}` : ''}
+          </span>
+        </span>
+      ),
+    },
+    { id: 'watched', label: 'Watched', minWidth: 90, render: (s) => <span className="font-medium text-slate-700 dark:text-slate-200">{fmtTime(s.totalWatchedSec)}</span> },
+    {
+      id: 'status', label: 'Status', minWidth: 120,
+      render: (s) => (
+        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
+          s.status === 'ENDED' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+          s.status === 'WATCHING' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
+          'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+        }`}>
+          <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70" />
+          {s.status}
+        </span>
+      ),
+    },
+  ];
 
   if (loading) return (
     <div className="flex items-center justify-center h-64">
@@ -213,7 +313,7 @@ export default function AdminClassDetail() {
         ))}
       </div>
 
-      {/* ═══════════════ MONTHS TAB ═══════════════ */}
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• MONTHS TAB â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
       {tab === 'months' && (
         <div className="space-y-3">
           <div className="flex justify-end">
@@ -278,50 +378,18 @@ export default function AdminClassDetail() {
                 <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Add your first month to start organizing recordings</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700">
-                      <th className="text-left px-4 py-3 font-medium text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Name</th>
-                      <th className="text-left px-4 py-3 font-medium text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Period</th>
-                      <th className="text-left px-4 py-3 font-medium text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Recordings</th>
-                      <th className="text-left px-4 py-3 font-medium text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Visibility</th>
-                      <th className="text-right px-4 py-3 font-medium text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                    {months.map((m: any) => {
-                      const recCount = recordings.filter((r: any) => r.monthId === m.id).length;
-                      return (
-                        <tr key={m.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-700/30 transition">
-                          <td className="px-4 py-3 font-medium text-slate-800 dark:text-slate-100">{m.name}</td>
-                          <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{MONTH_NAMES[(m.month || 1) - 1]} {m.year}</td>
-                          <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{recCount} recording{recCount !== 1 ? 's' : ''}</td>
-                          <td className="px-4 py-3"><span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${statusBadge(m.status || 'ANYONE')}`}>{(m.status || 'ANYONE').replace(/_/g, ' ')}</span></td>
-                          <td className="px-4 py-3 text-right">
-                            <div className="flex items-center justify-end gap-1.5">
-                              <button onClick={() => openEditMonth(m)} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-xs font-semibold hover:bg-blue-100 dark:hover:bg-blue-900/40 transition">
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                                Edit
-                              </button>
-                              <button onClick={() => deleteMonth(m.id)} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400 text-xs font-semibold hover:bg-red-100 dark:hover:bg-red-900/40 transition">
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                Delete
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+              <StickyDataTable
+                columns={monthColumns}
+                rows={months}
+                getRowId={(row) => row.id}
+                tableHeight="calc(100vh - 420px)"
+              />
             )}
           </div>
         </div>
       )}
 
-      {/* ═══════════════ RECORDINGS TAB ═══════════════ */}
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• RECORDINGS TAB â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
       {tab === 'recordings' && (
         <div className="space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -427,7 +495,7 @@ export default function AdminClassDetail() {
                   <div className="p-3.5">
                     <p className="font-semibold text-sm text-slate-800 dark:text-slate-100 truncate">{rec.title}</p>
                     {rec.topic && <p className="text-xs text-blue-500 dark:text-blue-400 truncate mt-0.5 font-medium">{rec.topic}</p>}
-                    <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">{rec.month?.name || '—'} · {rec.createdAt ? new Date(rec.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : ''}</p>
+                    <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">{rec.month?.name || 'â€”'} Â· {rec.createdAt ? new Date(rec.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : ''}</p>
                     <div className="flex items-center gap-1.5 mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-700">
                       <button onClick={() => openEditRec(rec)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-xs font-semibold hover:bg-blue-100 dark:hover:bg-blue-900/40 transition">
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
@@ -452,7 +520,7 @@ export default function AdminClassDetail() {
         </div>
       )}
 
-      {/* ═══════════════ STUDENTS TAB ═══════════════ */}
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• STUDENTS TAB â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
       {tab === 'students' && (
         <div className="space-y-3">
           {/* Enroll form */}
@@ -484,48 +552,18 @@ export default function AdminClassDetail() {
                 <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Use the form above to enroll students</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-100 dark:border-slate-700">
-                      <th className="text-left px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Student</th>
-                      <th className="text-left px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Email</th>
-                      <th className="text-left px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">ID</th>
-                      <th className="text-left px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Enrolled</th>
-                      <th className="text-right px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50 dark:divide-slate-700">
-                    {enrollments.map((enr: any) => (
-                      <tr key={enr.userId} className="hover:bg-slate-50/80 dark:hover:bg-slate-700/30 transition">
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                              {(enr.user?.profile?.fullName || enr.user?.email || '?')[0].toUpperCase()}
-                            </div>
-                            <span className="font-semibold text-slate-800 dark:text-slate-100">{enr.user?.profile?.fullName || '—'}</span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{enr.user?.email}</td>
-                        <td className="px-4 py-3 text-slate-400 dark:text-slate-500 text-xs font-mono">{enr.user?.profile?.instituteId || '—'}</td>
-                        <td className="px-4 py-3 text-slate-400 dark:text-slate-500 text-xs">{enr.createdAt ? new Date(enr.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</td>
-                        <td className="px-4 py-3 text-right">
-                          <button onClick={() => handleUnenroll(enr.userId)} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400 text-xs font-semibold hover:bg-red-100 dark:hover:bg-red-900/40 transition">
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M13 7a4 4 0 11-8 0 4 4 0 018 0zM9 14a6 6 0 00-6 6v1h12v-1a6 6 0 00-6-6zM21 12h-6" /></svg>
-                            Unenroll
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <StickyDataTable
+                columns={enrollmentColumns}
+                rows={enrollments}
+                getRowId={(row) => row.userId}
+                tableHeight="calc(100vh - 500px)"
+              />
             )}
           </div>
         </div>
       )}
 
-      {/* ═══════════════ ATTENDANCE TAB ═══════════════ */}
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• ATTENDANCE TAB â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
       {tab === 'attendance' && (
         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
           {watchSessions.length === 0 ? (
@@ -537,56 +575,17 @@ export default function AdminClassDetail() {
               <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Sessions are recorded when students watch recordings</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700">
-                    <th className="text-left px-4 py-3 font-medium text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Student</th>
-                    <th className="text-left px-4 py-3 font-medium text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Recording</th>
-                    <th className="text-left px-4 py-3 font-medium text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Date</th>
-                    <th className="text-left px-4 py-3 font-medium text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Watched</th>
-                    <th className="text-left px-4 py-3 font-medium text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                  {watchSessions.map((s: any) => (
-                    <tr key={s.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-700/30 transition">
-                      <td className="px-4 py-3">
-                        <p className="font-medium text-slate-800 dark:text-slate-100">{s.user?.profile?.fullName || '—'}</p>
-                        <p className="text-xs text-slate-400">{s.user?.email}</p>
-                      </td>
-                      <td className="px-4 py-3">
-                        <p className="text-slate-600 dark:text-slate-300">{s.recording?.title || '—'}</p>
-                        <p className="text-xs text-slate-400">{s.recording?.month?.name || '—'}</p>
-                      </td>
-                      <td className="px-4 py-3 text-slate-400 dark:text-slate-500 text-xs">
-                        {s.startedAt ? new Date(s.startedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
-                        <br />
-                        <span className="text-slate-300 dark:text-slate-600">
-                          {s.startedAt ? new Date(s.startedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : ''}
-                          {s.endedAt ? ` – ${new Date(s.endedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}` : ''}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 font-medium text-slate-700 dark:text-slate-200">{fmtTime(s.totalWatchedSec)}</td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
-                          s.status === 'ENDED' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-                          s.status === 'WATCHING' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
-                          'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
-                        }`}>
-                          <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70" />
-                          {s.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <StickyDataTable
+              columns={watchColumns}
+              rows={watchSessions}
+              getRowId={(row) => row.id}
+              tableHeight="calc(100vh - 380px)"
+            />
           )}
         </div>
       )}
     </div>
   );
 }
+
 

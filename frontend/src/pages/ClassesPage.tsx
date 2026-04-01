@@ -18,7 +18,7 @@ export default function ClassesPage() {
   const filtered = classes.filter(c => c.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 animate-fade-in">
+    <div className="w-full space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold text-slate-800 dark:text-slate-100">Classes</h1>
@@ -50,41 +50,40 @@ export default function ClassesPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((cls: any) => (
-            <Link key={cls.id} to={`/classes/${cls.id}`}
-              className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 overflow-hidden card-hover group shadow-sm">
-              {/* Thumbnail or gradient placeholder */}
-              <div className="relative aspect-video bg-slate-100 dark:bg-slate-700">
+            <div key={cls.id}
+              className="relative flex w-full flex-col rounded-xl border border-blue-300 dark:border-blue-500 bg-white bg-clip-border text-slate-700 shadow-md transition-all hover:-translate-y-1 hover:shadow-xl">
+              <div className="relative mx-4 -mt-6 h-40 overflow-hidden rounded-xl bg-blue-500 bg-clip-border text-white shadow-lg shadow-blue-500/40 bg-gradient-to-r from-blue-500 to-blue-600">
                 {cls.thumbnail ? (
                   <img src={cls.thumbnail} alt={cls.name} className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
-                    <span className="text-white text-3xl font-bold opacity-70">{cls.name?.[0]?.toUpperCase() || 'C'}</span>
+                  <div className="w-full h-full flex items-center justify-center">
+                    <span className="text-white text-5xl font-black opacity-80">{cls.name?.[0]?.toUpperCase() || 'C'}</span>
                   </div>
                 )}
+              </div>
+              <div className="p-6">
+                <h5 className="mb-2 block text-xl font-semibold leading-snug tracking-normal text-slate-900 truncate">
+                  {cls.name}
+                </h5>
+                <p className="block text-sm font-light leading-relaxed text-slate-600 line-clamp-2">
+                  {cls.description || 'No description available'}
+                </p>
                 {cls.subject && (
-                  <span className="absolute top-2 left-2 px-2 py-0.5 rounded bg-black/50 text-white text-[10px] font-medium backdrop-blur-sm">
-                    {cls.subject}
-                  </span>
+                  <p className="mt-2 text-xs font-semibold text-blue-600 uppercase tracking-wide">{cls.subject}</p>
                 )}
               </div>
-              <div className="p-4">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-slate-800 dark:text-slate-100 group-hover:text-blue-600 transition text-sm truncate">{cls.name}</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mt-1 leading-relaxed">{cls.description || 'No description available'}</p>
-                  </div>
-                  <svg className="w-4 h-4 text-slate-300 dark:text-slate-500 group-hover:text-blue-500 group-hover:translate-x-1 transition-all flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                  </svg>
-                </div>
-                {cls.monthlyFee != null && (
-                  <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between">
-                    <span className="text-xs text-slate-400 dark:text-slate-500">Monthly fee</span>
+              <div className="p-6 pt-0">
+                <div className="mb-3 min-h-6">
+                  {cls.monthlyFee != null && (
                     <span className="text-sm font-bold text-blue-600">Rs. {Number(cls.monthlyFee).toLocaleString()}</span>
-                  </div>
-                )}
+                  )}
+                </div>
+                <Link to={`/classes/${cls.id}`}
+                  className="w-full block select-none rounded-lg bg-blue-500 py-3 px-6 text-center align-middle text-xs font-bold uppercase text-white shadow-md shadow-blue-500/20 transition-all hover:shadow-lg hover:shadow-blue-500/40">
+                  Select Class
+                </Link>
               </div>
-            </Link>
+            </div>
           ))}
         </div>
       )}

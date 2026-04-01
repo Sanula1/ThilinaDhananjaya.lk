@@ -28,7 +28,13 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setError(''); setLoading(true);
     try {
-      await register({ email: form.email, password: form.password, fullName: form.fullName, phone: form.phone || undefined, school: form.school || undefined });
+      await register({
+        email: form.email,
+        password: form.password,
+        fullName: form.fullName,
+        phone: form.phone.trim(),
+        school: form.school.trim(),
+      });
       navigate('/dashboard');
     } catch (err: any) { setError(err.response?.data?.message || 'Registration failed.'); setStep(0); }
     finally { setLoading(false); }

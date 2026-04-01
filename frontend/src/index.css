@@ -71,6 +71,7 @@ select { cursor: pointer; }
 /* Gradient text */
 .text-gradient {
   background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -96,4 +97,37 @@ body {
 .dark body {
   background: #0b1120;
   color: #e2e8f0;
+}
+
+/* Global dark-mode hardening for cards, tables, and text */
+.dark .bg-white,
+.dark .bg-slate-50,
+.dark .bg-slate-100 {
+  background-color: #0f172a !important;
+}
+
+.dark .border-slate-100,
+.dark .border-slate-200,
+.dark .border-slate-300 {
+  border-color: #334155 !important;
+}
+
+.dark .text-slate-900,
+.dark .text-slate-800,
+.dark .text-slate-700,
+.dark .text-slate-600,
+.dark .text-slate-500,
+.dark .text-slate-400,
+.dark .text-slate-300 {
+  color: #f8fafc !important;
+}
+
+.dark table,
+.dark thead,
+.dark tbody,
+.dark tr,
+.dark th,
+.dark td {
+  background-color: transparent;
+  color: #f8fafc;
 }

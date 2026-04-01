@@ -16,7 +16,7 @@ export default function MyPaymentsPage() {
   }, []);
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 animate-fade-in">
+    <div className="w-full space-y-6 animate-fade-in">
       <div>
         <h1 className="text-xl font-bold text-slate-800 dark:text-slate-100">My Payments</h1>
         <p className="text-slate-500 dark:text-slate-400 text-sm mt-0.5">Track your payment submissions and status</p>

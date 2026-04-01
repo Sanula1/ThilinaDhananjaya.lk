@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import api from '../../lib/api';
+import StickyDataTable, { type StickyColumn } from '../../components/StickyDataTable';
 
 const VISIBILITY_OPTIONS = ['ANYONE', 'STUDENTS_ONLY', 'PAID_ONLY', 'PRIVATE', 'INACTIVE'];
 const statusBadge = (s: string) => {
@@ -93,6 +94,65 @@ export default function AdminRecordingHistory() {
       r.month?.class?.name?.toLowerCase().includes(q)
     );
   }
+
+  const recordingColumns: readonly StickyColumn<any>[] = [
+    {
+      id: 'recording',
+      label: 'Recording',
+      minWidth: 250,
+      render: (rec) => (
+        <div className="flex items-center gap-3">
+          {rec.thumbnail ? (
+            <img src={rec.thumbnail} alt="" className="w-16 h-10 rounded-xl object-cover flex-shrink-0" />
+          ) : (
+            <div className="w-16 h-10 rounded-xl bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-600 flex items-center justify-center flex-shrink-0">
+              <svg className="w-5 h-5 text-slate-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.069A1 1 0 0121 8.82v6.361a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+            </div>
+          )}
+          <div className="min-w-0">
+            <p className="font-semibold text-slate-800 dark:text-slate-100 truncate text-sm">{rec.title}</p>
+            {rec.topic && <p className="text-xs text-slate-400 truncate">{rec.topic}</p>}
+          </div>
+        </div>
+      ),
+    },
+    { id: 'class', label: 'Class', minWidth: 150, render: (rec) => <span className="text-slate-600 dark:text-slate-300 text-sm">{rec.month?.class?.name || '-'}</span> },
+    { id: 'month', label: 'Month', minWidth: 130, render: (rec) => <span className="text-slate-500 dark:text-slate-400 text-sm">{rec.month?.name || '-'}</span> },
+    {
+      id: 'status',
+      label: 'Status',
+      minWidth: 130,
+      render: (rec) => (
+        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${statusBadge(rec.status || 'PAID_ONLY')}`}>
+          <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70" />
+          {(rec.status || 'PAID_ONLY').replace(/_/g, ' ')}
+        </span>
+      ),
+    },
+    { id: 'date', label: 'Date', minWidth: 100, render: (rec) => <span className="text-slate-400 dark:text-slate-500 text-xs">{rec.createdAt ? new Date(rec.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}</span> },
+    {
+      id: 'actions',
+      label: 'Actions',
+      minWidth: 220,
+      align: 'right',
+      render: (rec) => (
+        <div className="flex items-center justify-end gap-1.5">
+          <button onClick={() => openEdit(rec)} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-xs font-semibold hover:bg-blue-100 dark:hover:bg-blue-900/40 transition">
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+            Edit
+          </button>
+          {rec.videoUrl && <a href={rec.videoUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition">
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            View
+          </a>}
+          <button onClick={() => handleDelete(rec.id)} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400 text-xs font-semibold hover:bg-red-100 dark:hover:bg-red-900/40 transition">
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+            Delete
+          </button>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <div className="space-y-5 animate-fade-in">
@@ -249,7 +309,7 @@ export default function AdminRecordingHistory() {
             <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
           </div>
 
-          {/* Clear filters — only show when any filter is active */}
+          {/* Clear filters â€” only show when any filter is active */}
           {(filterClass || filterStatus || search) && (
             <button
               onClick={() => { setFilterClass(''); setFilterStatus(''); setSearch(''); }}
@@ -281,7 +341,7 @@ export default function AdminRecordingHistory() {
                 </button>
               </span>
             )}
-            <span className="text-[11px] text-slate-400">— {filtered.length} result{filtered.length !== 1 ? 's' : ''}</span>
+            <span className="text-[11px] text-slate-400">â€” {filtered.length} result{filtered.length !== 1 ? 's' : ''}</span>
           </div>
         )}
       </div>
@@ -299,69 +359,16 @@ export default function AdminRecordingHistory() {
             <p className="text-xs text-slate-400 mt-1">Add a recording using the button above</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-100 dark:border-slate-700">
-                  <th className="text-left px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Recording</th>
-                  <th className="text-left px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Class</th>
-                  <th className="text-left px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Month</th>
-                  <th className="text-left px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Status</th>
-                  <th className="text-left px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Date</th>
-                  <th className="text-right px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50 dark:divide-slate-700">
-                {filtered.map((rec: any) => (
-                  <tr key={rec.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-700/30 transition">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        {rec.thumbnail ? (
-                          <img src={rec.thumbnail} alt="" className="w-16 h-10 rounded-xl object-cover flex-shrink-0" />
-                        ) : (
-                          <div className="w-16 h-10 rounded-xl bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-600 flex items-center justify-center flex-shrink-0">
-                            <svg className="w-5 h-5 text-slate-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.069A1 1 0 0121 8.82v6.361a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                          </div>
-                        )}
-                        <div className="min-w-0">
-                          <p className="font-semibold text-slate-800 dark:text-slate-100 truncate text-sm">{rec.title}</p>
-                          {rec.topic && <p className="text-xs text-slate-400 truncate">{rec.topic}</p>}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300 text-sm">{rec.month?.class?.name || '�'}</td>
-                    <td className="px-4 py-3 text-slate-500 dark:text-slate-400 text-sm">{rec.month?.name || '�'}</td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${statusBadge(rec.status || 'PAID_ONLY')}`}>
-                        <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70" />
-                        {(rec.status || 'PAID_ONLY').replace(/_/g, ' ')}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-slate-400 dark:text-slate-500 text-xs">{rec.createdAt ? new Date(rec.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '�'}</td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <button onClick={() => openEdit(rec)} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-xs font-semibold hover:bg-blue-100 dark:hover:bg-blue-900/40 transition">
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                          Edit
-                        </button>
-                        {rec.videoUrl && <a href={rec.videoUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition">
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                          View
-                        </a>}
-                        <button onClick={() => handleDelete(rec.id)} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400 text-xs font-semibold hover:bg-red-100 dark:hover:bg-red-900/40 transition">
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <StickyDataTable
+            columns={recordingColumns}
+            rows={filtered}
+            getRowId={(row) => row.id}
+            tableHeight="calc(100vh - 380px)"
+          />
         )}
       </div>
     </div>
   );
 }
+
 

@@ -12,7 +12,6 @@ import RecordingPlayerPage from './pages/RecordingPlayerPage';
 import PaymentSubmitPage from './pages/PaymentSubmitPage';
 import MyPaymentsPage from './pages/MyPaymentsPage';
 import WatchHistoryPage from './pages/WatchHistoryPage';
-import ClassDashboardPage from './pages/ClassDashboardPage';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -49,9 +48,8 @@ function AppRoutes() {
       <Route path="/" element={<Layout />}>
         <Route index element={<ClassesPage />} />
         <Route path="classes" element={<ClassesPage />} />
-        <Route path="classes/:id" element={<Navigate to="dashboard" replace />} />
-        <Route path="classes/:id/dashboard" element={<ClassDashboardPage />} />
-        <Route path="classes/:id/dashboard/class-recordings" element={<ClassDetailPage />} />
+        <Route path="classes/:id" element={<Navigate to="class-recordings" replace />} />
+        <Route path="classes/:id/class-recordings" element={<ClassDetailPage />} />
         <Route path="dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
         <Route path="payments/submit" element={<ProtectedRoute><PaymentSubmitPage /></ProtectedRoute>} />
         <Route path="payments/my" element={<ProtectedRoute><MyPaymentsPage /></ProtectedRoute>} />

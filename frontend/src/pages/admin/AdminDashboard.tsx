@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../lib/api';
 
@@ -19,21 +19,23 @@ const STAT_CARDS = [
 
 export default function AdminDashboard() {
   const [counts, setCounts] = useState<Record<string, number>>({});
+  const [classList, setClassList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     Promise.all([
       api.get('/users/students').then(r => r.data?.length || 0).catch(() => 0),
-      api.get('/classes').then(r => r.data?.length || 0).catch(() => 0),
+      api.get('/classes').then(r => r.data || []).catch(() => []),
       api.get('/payments/pending').then(r => r.data?.length || 0).catch(() => 0),
       api.get('/recordings').then(r => r.data?.length || 0).catch(() => 0),
     ]).then(([students, classes, payments, recordings]) => {
-      setCounts({ students, classes, payments, recordings });
+      setClassList(classes);
+      setCounts({ students, classes: classes.length, payments, recordings });
     }).finally(() => setLoading(false));
   }, []);
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 animate-fade-in">
+    <div className="w-full space-y-6 animate-fade-in">
       {/* Hero Banner */}
       <div className="relative bg-gradient-to-r from-[#0f172a] via-[#1e293b] to-[#0f172a] rounded-2xl p-6 md:p-8 overflow-hidden">
         <div className="absolute -top-16 -right-16 w-56 h-56 bg-blue-500/15 rounded-full blur-3xl" />
@@ -41,7 +43,23 @@ export default function AdminDashboard() {
         <div className="relative z-10">
           <p className="text-blue-300 text-xs font-semibold uppercase tracking-widest mb-1">Admin Panel</p>
           <h1 className="text-2xl md:text-3xl font-bold text-white">LMS Dashboard</h1>
-          <p className="text-slate-400 text-sm mt-1.5 max-w-md">Monitor your platform � students, classes, payments, and recordings at a glance.</p>
+          <p className="text-slate-400 text-sm mt-1.5 max-w-md">Monitor your platform — students, classes, payments, and recordings at a glance.</p>
+        </div>
+      </div>
+
+      {/* Quick Links */}
+      <div>
+        <h2 className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-3 uppercase tracking-wide">Quick Access</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          {QUICK_LINKS.map(({ to, label, icon, gradient }) => (
+            <Link key={to} to={to}
+              className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 flex flex-col items-center text-center shadow-sm hover:shadow-md hover:border-blue-200 dark:hover:border-blue-700 transition-all group">
+              <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center mb-2.5 shadow-md group-hover:scale-110 transition-transform`}>
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.7}><path strokeLinecap="round" strokeLinejoin="round" d={icon} /></svg>
+              </div>
+              <span className="text-xs font-semibold text-slate-700 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">{label}</span>
+            </Link>
+          ))}
         </div>
       </div>
 
@@ -62,22 +80,37 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      {/* Quick Links */}
+      {/* Available Classes */}
       <div>
-        <h2 className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-3 uppercase tracking-wide">Quick Access</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-          {QUICK_LINKS.map(({ to, label, icon, gradient }) => (
-            <Link key={to} to={to}
-              className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 flex flex-col items-center text-center shadow-sm hover:shadow-md hover:border-blue-200 dark:hover:border-blue-700 transition-all group">
-              <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center mb-2.5 shadow-md group-hover:scale-110 transition-transform`}>
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.7}><path strokeLinecap="round" strokeLinejoin="round" d={icon} /></svg>
-              </div>
-              <span className="text-xs font-semibold text-slate-700 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">{label}</span>
-            </Link>
-          ))}
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wide">Available Classes</h2>
+          <Link to="/admin/classes" className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 transition">View all</Link>
         </div>
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {[1, 2, 3].map((i) => <div key={i} className="h-24 rounded-2xl bg-slate-100 dark:bg-slate-700 animate-pulse" />)}
+          </div>
+        ) : classList.length === 0 ? (
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-8 text-center">
+            <p className="text-sm text-slate-500 dark:text-slate-400">No classes available yet</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {classList.slice(0, 6).map((cls: any) => (
+              <Link
+                key={cls.id}
+                to={`/admin/classes/${cls.id}`}
+                className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 shadow-sm hover:shadow-md hover:border-blue-200 dark:hover:border-blue-700 transition-all group"
+              >
+                <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">{cls.name}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 truncate">{cls.subject || 'No subject'}</p>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
 }
+
 

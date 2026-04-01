@@ -17,7 +17,12 @@ export default function RecordingPlayerPage() {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [failedSession, setFailedSession] = useState<SessionState | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1024);
+  const [confirmed, setConfirmed] = useState(false);
+  const [showWatchConfirm, setShowWatchConfirm] = useState(false);
+  const [countdown, setCountdown] = useState(30);
+  const classIdRef = useRef<string | null>(null);
+  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const endSessionRef = useRef<(() => Promise<{ ok: boolean; error?: string; session: SessionState }>) | null>(null);
 
@@ -27,10 +32,15 @@ export default function RecordingPlayerPage() {
     setError('');
     setSaveError('');
     setFailedSession(null);
+    setConfirmed(false);
+    setShowWatchConfirm(false);
+    setCountdown(30);
     api.get(`/recordings/${id}`)
       .then(async (r) => {
         const rec = r.data;
         setRecording(rec);
+        classIdRef.current = rec.month?.class?.id || null;
+        setShowWatchConfirm(true);
         // Fetch other recordings from same month
         if (rec.monthId) {
           try {
@@ -61,6 +71,37 @@ export default function RecordingPlayerPage() {
       navigate(-1);
     }
   }, [navigate]);
+
+  const navigateToRecordings = useCallback(() => {
+    const cid = classIdRef.current;
+    if (cid) navigate(`/classes/${cid}/class-recordings`);
+    else navigate(-1);
+  }, [navigate]);
+
+  const handleConfirmWatch = useCallback(() => {
+    if (countdownRef.current) { clearInterval(countdownRef.current); countdownRef.current = null; }
+    setShowWatchConfirm(false);
+    setConfirmed(true);
+  }, []);
+
+  const handleDeclineWatch = useCallback(() => {
+    if (countdownRef.current) { clearInterval(countdownRef.current); countdownRef.current = null; }
+    setShowWatchConfirm(false);
+    navigateToRecordings();
+  }, [navigateToRecordings]);
+
+  useEffect(() => {
+    if (!showWatchConfirm) return;
+    const timer = setInterval(() => {
+      setCountdown(prev => Math.max(0, prev - 1));
+    }, 1000);
+    countdownRef.current = timer;
+    return () => { clearInterval(timer); countdownRef.current = null; };
+  }, [showWatchConfirm]);
+
+  useEffect(() => {
+    if (showWatchConfirm && countdown === 0) navigateToRecordings();
+  }, [countdown, showWatchConfirm, navigateToRecordings]);
 
   // Parse materials
   const materials = (() => {
@@ -130,7 +171,7 @@ export default function RecordingPlayerPage() {
           {/* Toggle sidebar */}
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+            className="hidden lg:inline-flex p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
             title={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
@@ -198,18 +239,29 @@ export default function RecordingPlayerPage() {
       {/* Main content: video + sidebar */}
       <div className="flex-1 flex min-h-0 overflow-hidden">
         {/* Video area */}
-        <div className={`flex-1 min-w-0 flex flex-col ${sidebarOpen ? '' : ''}`}>
-          <VideoPlayer
-            recordingId={recording.id}
-            videoUrl={recording.videoUrl}
-            title={recording.title}
-            endSessionRef={endSessionRef}
-          />
+        <div className="flex-1 min-w-0 flex flex-col">
+          {confirmed ? (
+            <VideoPlayer
+              recordingId={recording.id}
+              videoUrl={recording.videoUrl}
+              title={recording.title}
+              endSessionRef={endSessionRef}
+            />
+          ) : (
+            <div className="flex-1 flex items-center justify-center bg-black">
+              <div className="text-center">
+                <svg className="w-12 h-12 text-slate-700 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.069A1 1 0 0121 8.82v6.361a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                <p className="text-slate-700 text-sm">Confirm to start watching</p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Sidebar */}
         {sidebarOpen && (
-          <div className="w-80 lg:w-96 bg-slate-900 border-l border-slate-800 flex flex-col flex-shrink-0 overflow-hidden">
+          <div className="hidden lg:flex w-80 lg:w-96 bg-slate-900 border-l border-slate-800 flex-col flex-shrink-0 overflow-hidden">
             {/* Description + Materials */}
             <div className="p-4 border-b border-slate-800 overflow-y-auto flex-shrink-0 max-h-48">
               {recording.description && (
@@ -291,6 +343,34 @@ export default function RecordingPlayerPage() {
           </div>
         )}
       </div>
+
+      {/* Watch confirmation modal */}
+      {showWatchConfirm && (
+        <div className="absolute inset-0 z-10 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-800 rounded-2xl shadow-2xl w-full max-w-sm border border-slate-700/50">
+            <div className="p-6 text-center">
+              <div className="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mx-auto mb-4">
+                <svg className="w-7 h-7 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.069A1 1 0 0121 8.82v6.361a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <h2 className="text-white font-bold text-lg">I'm Watching Recording</h2>
+              <p className="text-slate-400 text-sm mt-2 leading-relaxed">Please confirm you are here to watch this recording. Your attendance will be recorded.</p>
+              <div className="mt-3 flex items-center justify-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse inline-block" />
+                <span className="text-slate-400 text-sm">Auto-closing in <span className="text-yellow-400 font-mono font-semibold">{countdown}s</span></span>
+              </div>
+            </div>
+            <div className="mx-6 mb-5 h-1.5 rounded-full bg-slate-700 overflow-hidden">
+              <div className="h-full rounded-full bg-yellow-500 transition-all duration-1000" style={{ width: `${(countdown / 30) * 100}%` }} />
+            </div>
+            <div className="flex gap-3 px-6 pb-6">
+              <button onClick={handleDeclineWatch} className="flex-1 py-2.5 rounded-xl border border-slate-600 text-slate-300 text-sm font-semibold hover:bg-slate-700 transition">Close</button>
+              <button onClick={handleConfirmWatch} className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white text-sm font-semibold hover:from-blue-600 hover:to-blue-700 transition shadow-lg shadow-blue-500/25">Yes I'm Here</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

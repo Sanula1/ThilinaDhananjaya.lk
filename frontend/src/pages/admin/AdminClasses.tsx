@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import api from '../../lib/api';
+import StickyDataTable, { type StickyColumn } from '../../components/StickyDataTable';
 
 const VISIBILITY_OPTIONS = ['ANYONE', 'STUDENTS_ONLY', 'PAID_ONLY', 'PRIVATE', 'INACTIVE'];
 const statusBadge = (s: string) => {
@@ -53,6 +54,64 @@ export default function AdminClasses() {
   };
 
   const update = (k: string, v: string) => setForm(p => ({ ...p, [k]: v }));
+
+  const classColumns: readonly StickyColumn<any>[] = [
+    {
+      id: 'class',
+      label: 'Class',
+      minWidth: 280,
+      render: (cls) => (
+        <div className="flex items-center gap-3">
+          {cls.thumbnail ? (
+            <img src={cls.thumbnail} alt="" className="w-10 h-10 rounded-xl object-cover flex-shrink-0" />
+          ) : (
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow-md">
+              <span className="text-white text-sm font-bold">{cls.name?.[0]?.toUpperCase() || 'C'}</span>
+            </div>
+          )}
+          <div className="min-w-0">
+            <p className="font-semibold text-slate-800 dark:text-slate-100 truncate">{cls.name}</p>
+            {cls.description && <p className="text-xs text-slate-400 truncate max-w-[200px]">{cls.description}</p>}
+          </div>
+        </div>
+      ),
+    },
+    { id: 'subject', label: 'Subject', minWidth: 140, render: (cls) => <span className="text-slate-500 dark:text-slate-400 text-sm">{cls.subject || '-'}</span> },
+    { id: 'monthlyFee', label: 'Monthly Fee', minWidth: 140, align: 'right', render: (cls) => <span className="text-slate-700 dark:text-slate-300 font-semibold text-sm">{cls.monthlyFee != null ? `Rs. ${Number(cls.monthlyFee).toLocaleString()}` : '-'}</span> },
+    {
+      id: 'status',
+      label: 'Status',
+      minWidth: 130,
+      render: (cls) => (
+        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${statusBadge(cls.status || 'ANYONE')}`}>
+          <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70" />
+          {(cls.status || 'ANYONE').replace(/_/g, ' ')}
+        </span>
+      ),
+    },
+    {
+      id: 'actions',
+      label: 'Actions',
+      minWidth: 290,
+      align: 'right',
+      render: (cls) => (
+        <div className="flex items-center justify-end gap-1.5">
+          <Link to={`/admin/classes/${cls.id}`} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition">
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+            Manage
+          </Link>
+          <button onClick={() => openEdit(cls)} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-xs font-semibold hover:bg-blue-100 dark:hover:bg-blue-900/40 transition">
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+            Edit
+          </button>
+          <button onClick={() => handleDelete(cls.id)} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400 text-xs font-semibold hover:bg-red-100 dark:hover:bg-red-900/40 transition">
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+            Delete
+          </button>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <div className="space-y-5 animate-fade-in">
@@ -159,67 +218,16 @@ export default function AdminClasses() {
             <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Create your first class to get started</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-100 dark:border-slate-700">
-                  <th className="text-left px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Class</th>
-                  <th className="text-left px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Subject</th>
-                  <th className="text-right px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Monthly Fee</th>
-                  <th className="text-left px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Status</th>
-                  <th className="text-right px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50 dark:divide-slate-700">
-                {classes.map((cls: any) => (
-                  <tr key={cls.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-700/30 transition">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        {cls.thumbnail ? (
-                          <img src={cls.thumbnail} alt="" className="w-10 h-10 rounded-xl object-cover flex-shrink-0" />
-                        ) : (
-                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow-md">
-                            <span className="text-white text-sm font-bold">{cls.name?.[0]?.toUpperCase() || 'C'}</span>
-                          </div>
-                        )}
-                        <div className="min-w-0">
-                          <p className="font-semibold text-slate-800 dark:text-slate-100 truncate">{cls.name}</p>
-                          {cls.description && <p className="text-xs text-slate-400 truncate max-w-[200px]">{cls.description}</p>}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-slate-500 dark:text-slate-400 text-sm">{cls.subject || '�'}</td>
-                    <td className="px-4 py-3 text-right text-slate-700 dark:text-slate-300 font-semibold text-sm">{cls.monthlyFee != null ? `Rs. ${Number(cls.monthlyFee).toLocaleString()}` : '�'}</td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${statusBadge(cls.status || 'ANYONE')}`}>
-                        <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70" />
-                        {(cls.status || 'ANYONE').replace(/_/g, ' ')}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <Link to={`/admin/classes/${cls.id}`} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition">
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                          Manage
-                        </Link>
-                        <button onClick={() => openEdit(cls)} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-xs font-semibold hover:bg-blue-100 dark:hover:bg-blue-900/40 transition">
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                          Edit
-                        </button>
-                        <button onClick={() => handleDelete(cls.id)} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400 text-xs font-semibold hover:bg-red-100 dark:hover:bg-red-900/40 transition">
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <StickyDataTable
+            columns={classColumns}
+            rows={classes}
+            getRowId={(row) => row.id}
+            tableHeight="calc(100vh - 300px)"
+          />
         )}
       </div>
     </div>
   );
 }
+
 

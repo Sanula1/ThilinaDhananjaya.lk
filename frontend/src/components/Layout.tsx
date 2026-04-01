@@ -2,6 +2,7 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import api from '../lib/api';
 
 /* -------- Sidebar Nav Item -------- */
 function NavItem({ to, icon, label, badge, onClick, exact }: { to: string; icon: React.ReactNode; label: string; badge?: number; onClick?: () => void; exact?: boolean }) {
@@ -61,6 +62,7 @@ export default function Layout() {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [time, setTime] = useState(new Date());
+  const [selectedClassName, setSelectedClassName] = useState('');
 
   useEffect(() => {
     const t = setInterval(() => setTime(new Date()), 60000);
@@ -78,8 +80,18 @@ export default function Layout() {
   const hour = time.getHours();
   const greeting = hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : 'Good Evening';
 
-  const isClassDetail = /^\/classes\/[^/]+(\/(dashboard)(\/.*)?)?$/.test(location.pathname) && location.pathname.startsWith('/classes/');
+  const isClassDetail = /^\/classes\/[^/]+(\/class-recordings)?$/.test(location.pathname) && location.pathname.startsWith('/classes/');
   const classId = isClassDetail ? location.pathname.split('/')[2] : null;
+
+  useEffect(() => {
+    if (!classId) {
+      setSelectedClassName('');
+      return;
+    }
+    api.get(`/classes/${classId}`)
+      .then((res) => setSelectedClassName(res.data?.name || 'Selected Class'))
+      .catch(() => setSelectedClassName('Selected Class'));
+  }, [classId]);
 
   /* -------- Sidebar Content -------- */
   const SidebarContent = () => (
@@ -108,21 +120,33 @@ export default function Layout() {
 
       {/* Nav */}
       <nav className="flex-1 px-3 pb-3 overflow-y-auto sidebar-scroll">
+        {isClassDetail && (
+          <div className="mt-3 rounded-xl border border-blue-100 dark:border-blue-900/40 bg-blue-50/70 dark:bg-blue-500/10 overflow-hidden">
+            <div className="px-3 py-2 border-b border-blue-100 dark:border-blue-900/40">
+              <p className="text-[10px] font-bold text-blue-500 dark:text-blue-300 uppercase tracking-[0.14em]">Current Selection</p>
+            </div>
+            <div className="px-3 py-2.5 flex items-center gap-2">
+              <span className="w-[16px] h-[16px] text-blue-500 dark:text-blue-300 flex-shrink-0">{icons.classes}</span>
+              <p className="text-[13px] font-semibold text-blue-700 dark:text-blue-200 truncate flex-1">{selectedClassName || 'Loading...'}</p>
+              <Link to="/classes" className="text-blue-500 dark:text-blue-300 hover:text-blue-700 dark:hover:text-blue-200 transition" aria-label="Back to classes">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+              </Link>
+            </div>
+          </div>
+        )}
+
         {/* ---- Class Detail context ---- */}
         {isClassDetail ? (
           <>
-            <SideSection label="Main">
-              <NavItem to={`/classes/${classId}/dashboard`} icon={icons.home} label="Dashboard" exact />
-            </SideSection>
             <SideSection label="Classes">
-              <NavItem to={`/classes/${classId}/dashboard/class-recordings`} icon={icons.recordings} label="Class Recording" exact />
+              <NavItem to={`/classes/${classId}/class-recordings`} icon={icons.recordings} label="Class Recording" exact />
             </SideSection>
           </>
         ) : (
           <>
             {user && (
               <SideSection label="Main">
-                <NavItem to="/dashboard" icon={icons.home} label="Dashboard" />
+                <NavItem to={user.role === 'ADMIN' ? '/admin' : '/dashboard'} icon={icons.home} label="Dashboard" />
               </SideSection>
             )}
 
@@ -144,7 +168,6 @@ export default function Layout() {
 
             {user?.role === 'ADMIN' && (
               <SideSection label="Administration">
-                <NavItem to="/admin" icon={icons.admin} label="Overview" />
                 <NavItem to="/admin/students" icon={icons.students} label="Students" />
                 <NavItem to="/admin/classes" icon={icons.classes} label="Manage Classes" />
                 <NavItem to="/admin/slips" icon={icons.slips} label="Payment Slips" />
@@ -215,6 +238,16 @@ export default function Layout() {
               className="lg:hidden p-2 -ml-1 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition">
               <span className="w-5 h-5 block">{icons.menu}</span>
             </button>
+            {user && (
+              <button
+                onClick={() => navigate(-1)}
+                className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition"
+                aria-label="Go back"
+                title="Go back"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+              </button>
+            )}
             {user && (
               <div className="hidden sm:block">
                 <p className="text-[13px] font-semibold text-slate-800 dark:text-slate-100">{greeting}, {user.profile?.fullName?.split(' ')[0] || 'User'}!</p>

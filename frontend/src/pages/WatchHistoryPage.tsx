@@ -12,14 +12,6 @@ function fmtDuration(sec: number): string {
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
-/** Format a date as "2025/3/4 6:30 AM" */
-function fmtDateTime(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleDateString('en-GB', { year: 'numeric', month: 'numeric', day: 'numeric' }) +
-    ' at ' +
-    d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-}
-
 /** Format time range "6:30 AM – 7:00 AM" */
 function fmtTimeRange(startIso: string, endIso?: string): string {
   const start = new Date(startIso);
@@ -58,7 +50,7 @@ export default function WatchHistoryPage() {
   );
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
+    <div className="w-full space-y-6 animate-fade-in">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2.5">

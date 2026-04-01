@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../lib/api';
+import StickyDataTable, { type StickyColumn } from '../components/StickyDataTable';
 
 const statusConfig: Record<string, { label: string; dot: string; badge: string }> = {
   COMPLETED:  { label: 'Completed',  dot: 'bg-emerald-500', badge: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' },
@@ -56,6 +57,48 @@ export default function ClassAttendancePage() {
     INCOMPLETE: records.filter(r => r.status === 'INCOMPLETE').length,
     MANUAL: records.filter(r => r.status === 'MANUAL').length,
   };
+
+  const attendanceColumns: readonly StickyColumn<any>[] = [
+    {
+      id: 'student',
+      label: 'Student',
+      minWidth: 230,
+      render: (r) => {
+        const initials = r.user?.profile?.fullName
+          ? r.user.profile.fullName.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase()
+          : '?';
+        return (
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center flex-shrink-0">
+              <span className="text-white text-[10px] font-bold">{initials}</span>
+            </div>
+            <div className="min-w-0">
+              <p className="font-semibold text-slate-800 dark:text-slate-100 text-xs truncate max-w-[140px]">{r.user?.profile?.fullName || '-'}</p>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">{r.user?.profile?.instituteId || '-'}</p>
+            </div>
+          </div>
+        );
+      },
+    },
+    { id: 'recording', label: 'Recording', minWidth: 180, render: (r) => <span className="text-slate-700 dark:text-slate-200 text-xs font-medium">{r.recording?.title || '-'}</span> },
+    { id: 'month', label: 'Month', minWidth: 140, render: (r) => <span className="text-slate-500 dark:text-slate-400 text-xs">{r.recording?.month?.name || '-'}</span> },
+    {
+      id: 'status',
+      label: 'Status',
+      minWidth: 120,
+      render: (r) => {
+        const cfg = statusConfig[r.status] || statusConfig.INCOMPLETE;
+        return (
+          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold ${cfg.badge}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+            {cfg.label}
+          </span>
+        );
+      },
+    },
+    { id: 'watched', label: 'Watched', minWidth: 100, render: (r) => <span className="text-xs text-slate-600 dark:text-slate-300 font-medium">{fmtSec(r.watchedSec || 0)}</span> },
+    { id: 'date', label: 'Date', minWidth: 120, render: (r) => <span className="text-[11px] text-slate-400 dark:text-slate-500">{r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}</span> },
+  ];
 
   if (loading) return (
     <div className="flex items-center justify-center h-64">
@@ -148,80 +191,13 @@ export default function ClassAttendancePage() {
             <p className="text-slate-400 dark:text-slate-500 text-xs mt-1">Try adjusting your search or filter</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-100 dark:border-slate-700">
-                  <th className="text-left px-5 py-3 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Student</th>
-                  <th className="text-left px-5 py-3 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Recording</th>
-                  <th className="text-left px-5 py-3 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Month</th>
-                  <th className="text-left px-5 py-3 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
-                  <th className="text-left px-5 py-3 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Watched</th>
-                  <th className="text-left px-5 py-3 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Date</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                {filtered.map((r: any) => {
-                  const cfg = statusConfig[r.status] || statusConfig.INCOMPLETE;
-                  const initials = r.user?.profile?.fullName
-                    ? r.user.profile.fullName.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase()
-                    : '?';
-                  return (
-                    <tr key={r.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition">
-                      {/* Student */}
-                      <td className="px-5 py-3.5">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center flex-shrink-0">
-                            <span className="text-white text-[10px] font-bold">{initials}</span>
-                          </div>
-                          <div className="min-w-0">
-                            <p className="font-semibold text-slate-800 dark:text-slate-100 text-xs truncate max-w-[140px]">
-                              {r.user?.profile?.fullName || '—'}
-                            </p>
-                            <p className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
-                              {r.user?.profile?.instituteId || '—'}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                      {/* Recording */}
-                      <td className="px-5 py-3.5">
-                        <p className="text-slate-700 dark:text-slate-200 text-xs font-medium truncate max-w-[180px]">
-                          {r.recording?.title || '—'}
-                        </p>
-                      </td>
-                      {/* Month */}
-                      <td className="px-5 py-3.5">
-                        <p className="text-slate-500 dark:text-slate-400 text-xs truncate max-w-[120px]">
-                          {r.recording?.month?.name || '—'}
-                        </p>
-                      </td>
-                      {/* Status */}
-                      <td className="px-5 py-3.5">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold ${cfg.badge}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
-                          {cfg.label}
-                        </span>
-                      </td>
-                      {/* Watched */}
-                      <td className="px-5 py-3.5">
-                        <span className="text-xs text-slate-600 dark:text-slate-300 font-medium">
-                          {fmtSec(r.watchedSec || 0)}
-                        </span>
-                      </td>
-                      {/* Date */}
-                      <td className="px-5 py-3.5">
-                        <span className="text-[11px] text-slate-400 dark:text-slate-500">
-                          {r.createdAt
-                            ? new Date(r.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
-                            : '—'}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div>
+            <StickyDataTable
+              columns={attendanceColumns}
+              rows={filtered}
+              getRowId={(row) => row.id}
+              tableHeight="calc(100vh - 420px)"
+            />
             <div className="px-5 py-3 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/30">
               <p className="text-xs text-slate-400 dark:text-slate-500">
                 Showing <span className="font-semibold text-slate-600 dark:text-slate-300">{filtered.length}</span> of <span className="font-semibold text-slate-600 dark:text-slate-300">{records.length}</span> records
