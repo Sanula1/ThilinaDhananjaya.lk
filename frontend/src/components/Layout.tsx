@@ -214,7 +214,7 @@ export default function Layout() {
   return (
     <div className="flex h-screen overflow-hidden bg-[#f1f5f9] dark:bg-[#0b1120] transition-colors duration-300">
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex flex-col w-[255px] bg-white dark:bg-gradient-to-b dark:from-[#0f172a] dark:to-[#1e293b] flex-shrink-0 shadow-lg dark:shadow-2xl border-r border-slate-100 dark:border-transparent">
+      <aside className="hidden lg:flex flex-col w-[255px] xl:w-[270px] bg-white dark:bg-gradient-to-b dark:from-[#0f172a] dark:to-[#1e293b] flex-shrink-0 shadow-lg dark:shadow-2xl border-r border-slate-100 dark:border-transparent">
         <SidebarContent />
       </aside>
 
@@ -222,7 +222,7 @@ export default function Layout() {
       {sidebarOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex">
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
-          <aside className="relative w-[270px] bg-white dark:bg-gradient-to-b dark:from-[#0f172a] dark:to-[#1e293b] flex flex-col shadow-2xl animate-slide-in">
+          <aside className="relative w-[85vw] max-w-[300px] bg-white dark:bg-gradient-to-b dark:from-[#0f172a] dark:to-[#1e293b] flex flex-col shadow-2xl animate-slide-in">
             <SidebarContent />
           </aside>
         </div>
@@ -231,9 +231,9 @@ export default function Layout() {
       {/* Main area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top header */}
-        <header className="bg-white dark:bg-[#0f172a] h-14 flex items-center justify-between px-4 sm:px-6 flex-shrink-0 shadow-sm dark:shadow-black/20 z-10 border-b border-slate-100 dark:border-slate-800 transition-colors duration-300">
+        <header className="bg-white dark:bg-[#0f172a] min-h-14 flex items-center justify-between px-3 sm:px-6 py-2 flex-shrink-0 shadow-sm dark:shadow-black/20 z-10 border-b border-slate-100 dark:border-slate-800 transition-colors duration-300">
           {/* Left */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <button onClick={() => setSidebarOpen(true)}
               className="lg:hidden p-2 -ml-1 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition">
               <span className="w-5 h-5 block">{icons.menu}</span>
@@ -249,7 +249,7 @@ export default function Layout() {
               </button>
             )}
             {user && (
-              <div className="hidden sm:block">
+              <div className="hidden sm:block min-w-0">
                 <p className="text-[13px] font-semibold text-slate-800 dark:text-slate-100">{greeting}, {user.profile?.fullName?.split(' ')[0] || 'User'}!</p>
                 <p className="text-[10px] text-slate-400 dark:text-slate-500">{time.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</p>
               </div>

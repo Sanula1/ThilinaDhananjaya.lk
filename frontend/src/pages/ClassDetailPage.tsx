@@ -2,40 +2,6 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 
-/** Extract YouTube video ID from various URL formats */
-function getYouTubeId(url: string): string | null {
-  if (!url) return null;
-  const patterns = [
-    /(?:youtube\.com\/watch\?v=|youtube\.com\/embed\/|youtu\.be\/|youtube\.com\/v\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
-    /^([a-zA-Z0-9_-]{11})$/,
-  ];
-  for (const p of patterns) {
-    const m = url.match(p);
-    if (m) return m[1];
-  }
-  return null;
-}
-
-/** Renders either a YouTube iframe or HTML5 video tag */
-function EmbedVideo({ url, title }: { url: string; title?: string }) {
-  const ytId = getYouTubeId(url);
-  if (ytId) {
-    return (
-      <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
-        <iframe
-          className="absolute inset-0 w-full h-full"
-          src={`https://www.youtube.com/embed/${ytId}?rel=0`}
-          title={title || 'Video'}
-          frameBorder="0"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-        />
-      </div>
-    );
-  }
-  return <video src={url} controls className="w-full h-full" />;
-}
-
 /** Format seconds as h:mm:ss or m:ss */
 function fmtDuration(sec: number): string {
   const h = Math.floor(sec / 3600);
@@ -48,22 +14,16 @@ function fmtDuration(sec: number): string {
 export default function ClassDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [cls, setCls] = useState<any>(null);
   const [months, setMonths] = useState<any[]>([]);
   const [selMonthId, setSelMonthId] = useState('');
   const [recordings, setRecordings] = useState<any[]>([]);
   const [recsLoading, setRecsLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [showIntro, setShowIntro] = useState(false);
 
-  // Fetch class info + months
+  // Fetch months
   useEffect(() => {
-    Promise.all([
-      api.get(`/classes/${id}`),
-      api.get(`/classes/${id}/months`),
-    ]).then(([clsRes, monthsRes]) => {
-      setCls(clsRes.data);
+    api.get(`/classes/${id}/months`).then((monthsRes) => {
       const visibleMonths = (monthsRes.data || []).filter(
         (m: any) => m.status !== 'INACTIVE' && m.status !== 'PRIVATE',
       );
@@ -111,84 +71,9 @@ export default function ClassDetailPage() {
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
         Back to classes
       </Link>
-      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 overflow-hidden shadow-sm">
-        {cls?.thumbnail && (
-          <div className="relative h-48 sm:h-56">
-            <img src={cls.thumbnail} alt={cls.name} className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-            <div className="absolute bottom-4 left-6 right-6">
-              <h1 className="text-2xl font-bold text-white drop-shadow-lg">{cls?.name}</h1>
-              {cls?.subject && <p className="text-white/80 text-sm mt-0.5">{cls.subject}</p>}
-            </div>
-          </div>
-        )}
-        <div className="p-6">
-          {!cls?.thumbnail && (
-            <div className="flex items-start gap-4 mb-4">
-              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-blue-500/25">
-                <span className="text-white text-xl font-bold">{cls?.name?.[0]?.toUpperCase()}</span>
-              </div>
-              <div className="flex-1">
-                <h1 className="text-xl font-bold text-slate-800 dark:text-slate-100">{cls?.name}</h1>
-                {cls?.subject && <p className="text-slate-500 dark:text-slate-400 text-sm">{cls.subject}</p>}
-              </div>
-            </div>
-          )}
-          {cls?.description && <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">{cls.description}</p>}
-
-          <div className="flex flex-wrap items-center gap-2 mt-4">
-            {cls?.monthlyFee != null && (
-              <span className="inline-flex px-3 py-1 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-bold border border-blue-100 dark:border-blue-800">
-                Rs. {Number(cls.monthlyFee).toLocaleString()} / month
-              </span>
-            )}
-            <span className="inline-flex px-3 py-1 rounded-lg bg-slate-50 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400 text-xs font-medium border border-slate-100 dark:border-slate-600">
-              {months.length} month{months.length !== 1 ? 's' : ''}
-            </span>
-            {cls?.introVideoUrl && (
-              <button onClick={() => setShowIntro(!showIntro)}
-                className="inline-flex px-3 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-xs font-bold border border-emerald-100 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition items-center gap-1.5">
-                <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                {showIntro ? 'Hide Intro' : 'Watch Intro'}
-              </button>
-            )}
-          </div>
-
-          {/* Vision & Mission */}
-          {(cls?.vision || cls?.mission) && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 pt-4 border-t border-slate-100 dark:border-slate-700">
-              {cls.vision && (
-                <div className="p-3 rounded-lg bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30">
-                  <p className="text-[10px] font-bold text-blue-500 uppercase tracking-wider mb-1">Vision</p>
-                  <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">{cls.vision}</p>
-                </div>
-              )}
-              {cls.mission && (
-                <div className="p-3 rounded-lg bg-purple-50/50 dark:bg-purple-900/10 border border-purple-100 dark:border-purple-900/30">
-                  <p className="text-[10px] font-bold text-purple-500 uppercase tracking-wider mb-1">Mission</p>
-                  <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">{cls.mission}</p>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Intro Video */}
-      {showIntro && cls?.introVideoUrl && (
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 overflow-hidden shadow-sm animate-fade-in">
-          <div className="bg-black rounded-t-2xl overflow-hidden">
-            <EmbedVideo url={cls.introVideoUrl} title={`${cls.name} - Introduction`} />
-          </div>
-          <div className="p-4 flex items-center justify-between">
-            <p className="text-sm font-medium text-slate-700 dark:text-slate-200">Class Introduction</p>
-            <button onClick={() => setShowIntro(false)} className="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition">Close</button>
-          </div>
-        </div>
-      )}
 
       {/* Month tabs → Recordings grid */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 overflow-hidden shadow-sm">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 overflow-hidden shadow-sm min-h-[calc(100vh-220px)]">
         <div className="p-5 border-b border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <h2 className="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
             <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.7}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
@@ -237,7 +122,7 @@ export default function ClassDetailPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {recordings.map((rec: any) => (
                     <div key={rec.id}
-                      className="bg-slate-50 dark:bg-slate-700/50 rounded-xl overflow-hidden border border-slate-100 dark:border-slate-600 hover:border-blue-300 dark:hover:border-blue-700 transition group cursor-pointer"
+                      className="bg-slate-50 dark:bg-slate-700/50 rounded-xl overflow-hidden border border-blue-300 dark:border-blue-500 hover:border-blue-400 dark:hover:border-blue-400 transition group cursor-pointer"
                       onClick={() => navigate(`/recording/${rec.id}`)}>
                       {/* Thumbnail */}
                       <div className="relative aspect-video bg-slate-200 dark:bg-slate-600">

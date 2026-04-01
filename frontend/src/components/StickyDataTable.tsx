@@ -63,6 +63,11 @@ export default function StickyDataTable<T>({
     [rows, page, rowsPerPage],
   );
 
+  const tableMinWidth = React.useMemo(
+    () => columns.reduce((sum, col) => sum + (col.minWidth ?? 140), 0),
+    [columns],
+  );
+
   const handleChangePage = (_event: unknown, newPage: number) => {
     setPage(newPage);
   };
@@ -83,8 +88,14 @@ export default function StickyDataTable<T>({
         color: isDark ? '#f8fafc' : 'inherit',
       }}
     >
-      <TableContainer sx={{ height: tableHeight, backgroundColor: isDark ? '#0f172a' : '#ffffff' }}>
-        <Table stickyHeader aria-label="sticky table" size="medium">
+      <TableContainer
+        sx={{
+          height: tableHeight,
+          backgroundColor: isDark ? '#0f172a' : '#ffffff',
+          overflowX: 'auto',
+        }}
+      >
+        <Table stickyHeader aria-label="sticky table" size="medium" sx={{ minWidth: tableMinWidth }}>
           <TableHead>
             <TableRow>
               {columns.map((column) => (
@@ -97,8 +108,8 @@ export default function StickyDataTable<T>({
                     color: isDark ? '#f8fafc' : 'inherit',
                     borderColor: isDark ? '#334155' : 'inherit',
                     fontWeight: 700,
-                    fontSize: '0.95rem',
-                    py: 1.6,
+                    fontSize: { xs: '0.82rem', sm: '0.9rem', md: '0.95rem' },
+                    py: { xs: 1.2, sm: 1.4, md: 1.6 },
                   }}
                 >
                   {column.label}
@@ -130,7 +141,7 @@ export default function StickyDataTable<T>({
                   key={getRowId(row)}
                   sx={{
                     backgroundColor: isDark ? '#0f172a' : 'inherit',
-                    '& td': { py: 1.5 },
+                    '& td': { py: { xs: 1.2, sm: 1.4, md: 1.5 } },
                     '&:hover': {
                       backgroundColor: isDark ? '#1e293b' : 'inherit',
                     },
@@ -145,7 +156,7 @@ export default function StickyDataTable<T>({
                         sx={{
                           color: isDark ? '#f8fafc' : 'inherit',
                           borderColor: isDark ? '#334155' : 'inherit',
-                          fontSize: '0.95rem',
+                          fontSize: { xs: '0.82rem', sm: '0.9rem', md: '0.95rem' },
                         }}
                       >
                         {column.render
@@ -174,12 +185,26 @@ export default function StickyDataTable<T>({
           backgroundColor: isDark ? '#0f172a' : '#ffffff',
           color: isDark ? '#f8fafc' : 'inherit',
           borderTop: isDark ? '1px solid #334155' : 'inherit',
-          '.MuiTablePagination-toolbar': { minHeight: 64, fontSize: '0.95rem' },
-          '.MuiTablePagination-selectLabel': { fontSize: '0.92rem', fontWeight: 600 },
+          '.MuiTablePagination-toolbar': {
+            minHeight: { xs: 56, sm: 64 },
+            fontSize: { xs: '0.82rem', sm: '0.9rem', md: '0.95rem' },
+            px: { xs: 1, sm: 2 },
+            gap: { xs: 0.5, sm: 1 },
+            flexWrap: { xs: 'wrap', sm: 'nowrap' },
+          },
+          '.MuiTablePagination-selectLabel': { fontSize: { xs: '0.8rem', sm: '0.9rem' }, fontWeight: 600 },
           '.MuiTablePagination-selectIcon': { color: isDark ? '#f8fafc' : 'inherit' },
           '.MuiSvgIcon-root': { color: isDark ? '#f8fafc' : 'inherit' },
-          '.MuiSelect-select': { color: isDark ? '#f8fafc' : 'inherit', fontSize: '0.95rem', fontWeight: 600 },
-          '.MuiTablePagination-displayedRows': { color: isDark ? '#f8fafc' : 'inherit', fontSize: '0.92rem', fontWeight: 600 },
+          '.MuiSelect-select': {
+            color: isDark ? '#f8fafc' : 'inherit',
+            fontSize: { xs: '0.82rem', sm: '0.9rem', md: '0.95rem' },
+            fontWeight: 600,
+          },
+          '.MuiTablePagination-displayedRows': {
+            color: isDark ? '#f8fafc' : 'inherit',
+            fontSize: { xs: '0.8rem', sm: '0.9rem', md: '0.92rem' },
+            fontWeight: 600,
+          },
         }}
       />
     </Paper>
