@@ -98,6 +98,29 @@ export class AttendanceService {
     });
   }
 
+  /** Get attendance records filtered by class (via recording → month → class) */
+  async getByClass(classId: string) {
+    return this.prisma.attendance.findMany({
+      where: {
+        recording: {
+          month: {
+            classId,
+          },
+        },
+      },
+      include: {
+        user: { include: { profile: { select: { fullName: true, instituteId: true } } } },
+        recording: {
+          select: {
+            title: true,
+            month: { select: { name: true, class: { select: { id: true, name: true } } } },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   /** Get attendance records for a specific recording */
   async getByRecording(recordingId: string) {
     return this.prisma.attendance.findMany({

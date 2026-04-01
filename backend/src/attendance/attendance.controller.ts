@@ -77,6 +77,14 @@ export class AttendanceController {
     return this.attendanceService.getByRecording(recordingId);
   }
 
+  /** Admin: attendance for all recordings in a class */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @Get('class/:classId')
+  getClassAttendance(@Param('classId') classId: string) {
+    return this.attendanceService.getByClass(classId);
+  }
+
   // ─── Watch Session Endpoints ────────────────────────────
 
   /** Student: start a new watch session */

@@ -4,17 +4,19 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 
 /* -------- Sidebar Nav Item -------- */
-function NavItem({ to, icon, label, badge, onClick }: { to: string; icon: React.ReactNode; label: string; badge?: number; onClick?: () => void }) {
+function NavItem({ to, icon, label, badge, onClick, exact }: { to: string; icon: React.ReactNode; label: string; badge?: number; onClick?: () => void; exact?: boolean }) {
   const { pathname } = useLocation();
-  const active = pathname === to || (to !== '/' && to !== '/admin' && pathname.startsWith(to)) || (to === '/admin' && pathname === '/admin');
+  const active = exact
+    ? pathname === to
+    : pathname === to || (to !== '/' && to !== '/admin' && pathname.startsWith(to)) || (to === '/admin' && pathname === '/admin');
   return (
     <Link to={to} onClick={onClick}
-      className={`group flex items-center gap-3 px-4 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200 ${
+      className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-150 ${
         active
-          ? 'bg-blue-50 dark:bg-white/15 text-blue-700 dark:text-white shadow-sm dark:shadow-lg dark:shadow-black/10 border border-blue-100 dark:border-transparent'
-          : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/8 hover:text-slate-900 dark:hover:text-white border border-transparent'
+          ? 'bg-blue-50 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300'
+          : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/8 hover:text-slate-900 dark:hover:text-white'
       }`}>
-      <span className={`w-5 h-5 flex-shrink-0 transition-transform duration-200 ${active ? 'scale-110 text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 group-hover:scale-105'}`}>{icon}</span>
+      <span className={`w-[18px] h-[18px] flex-shrink-0 transition-colors ${active ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300'}`}>{icon}</span>
       <span className="flex-1">{label}</span>
       {badge != null && badge > 0 && (
         <span className="px-1.5 py-0.5 rounded-md bg-red-500 text-[10px] font-bold text-white min-w-[18px] text-center">{badge}</span>
@@ -23,9 +25,14 @@ function NavItem({ to, icon, label, badge, onClick }: { to: string; icon: React.
   );
 }
 
-/* -------- Section Label -------- */
-function SectionLabel({ label }: { label: string }) {
-  return <p className="px-4 pt-5 pb-1.5 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em]">{label}</p>;
+/* -------- Section Label (always open) -------- */
+function SideSection({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="mt-1">
+      <p className="px-3 pt-4 pb-1.5 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em]">{label}</p>
+      <div className="space-y-0.5">{children}</div>
+    </div>
+  );
 }
 
 /* -------- Icons -------- */
@@ -71,85 +78,111 @@ export default function Layout() {
   const hour = time.getHours();
   const greeting = hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : 'Good Evening';
 
+  const isClassDetail = /^\/classes\/[^/]+(\/(dashboard|watch-history)(\/.*)?)?\.?/.test(location.pathname) && location.pathname.startsWith('/classes/');
+  const classId = isClassDetail ? location.pathname.split('/')[2] : null;
+
   /* -------- Sidebar Content -------- */
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
-      {/* Logo */}
-      <div className="px-5 pt-6 pb-4">
-        <Link to="/" className="flex items-center gap-3 group">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30 group-hover:shadow-blue-500/50 transition-shadow">
-            <span className="text-white text-sm font-black tracking-tight">TD</span>
+      {/* Sidebar Header */}
+      <div className="flex items-center justify-between px-4 py-4 border-b border-slate-100 dark:border-white/8">
+        <Link to="/" className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+            <div className="w-5 h-5 rounded-lg bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
+              <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 11-6-11-6z" />
+              </svg>
+            </div>
           </div>
-          <div>
-            <p className="text-[13px] font-bold text-slate-800 dark:text-white leading-tight tracking-tight">ThilinaDhananjaya</p>
-            <p className="text-[10px] text-slate-400 dark:text-slate-400 font-medium">Learning Management</p>
-          </div>
+          <span className="text-[13px] font-bold text-slate-800 dark:text-white leading-tight">ThilinaDhananjaya</span>
         </Link>
+        <div className="flex items-center gap-0.5">
+          <button className="p-1.5 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/8 transition">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.7}><path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+          </button>
+          <button onClick={toggleTheme} className="p-1.5 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/8 transition" title="Toggle theme">
+            <span className="w-4 h-4 block">{theme === 'light' ? icons.moon : icons.sun}</span>
+          </button>
+        </div>
       </div>
 
-      {/* User card */}
-      {user && (
-        <div className="mx-3 mb-2 p-3.5 rounded-xl bg-slate-50 dark:bg-white/[0.06] border border-slate-200 dark:border-white/10">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center ring-2 ring-white/20">
-              <span className="text-white text-xs font-bold">{initials}</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-slate-800 dark:text-white truncate">{user.profile?.fullName || user.email}</p>
-              <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">{user.role === 'ADMIN' ? 'Administrator' : 'Student'}</p>
-            </div>
-          </div>
-          {user.profile?.instituteId && (
-            <div className="mt-2 px-2 py-1 rounded-md bg-slate-100 dark:bg-white/8 text-center">
-              <span className="text-[10px] text-slate-500 dark:text-slate-300 font-mono">{user.profile.instituteId}</span>
-            </div>
-          )}
-        </div>
-      )}
-
       {/* Nav */}
-      <nav className="flex-1 px-3 py-2 space-y-0.5 overflow-y-auto sidebar-scroll">
-        {user && <NavItem to="/dashboard" icon={icons.home} label="Dashboard" />}
-
-        <SectionLabel label="Classes" />
-        <NavItem to="/classes" icon={icons.classes} label="All Classes" />
-
-        {user?.role === 'STUDENT' && (
+      <nav className="flex-1 px-3 pb-3 overflow-y-auto sidebar-scroll">
+        {/* ---- Class Detail context ---- */}
+        {isClassDetail ? (
           <>
-            <SectionLabel label="Payments" />
-            <NavItem to="/payments/submit" icon={icons.upload} label="Upload Slip" />
-            <NavItem to="/payments/my" icon={icons.pay} label="My Payments" />
-
-            <SectionLabel label="Activity" />
-            <NavItem to="/watch-history" icon={icons.recordings} label="Watch History" />
+            <SideSection label="Main">
+              <NavItem to={`/classes/${classId}/dashboard`} icon={icons.home} label="Dashboard" exact />
+            </SideSection>
+            <SideSection label="Classes">
+              <NavItem to={`/classes/${classId}/dashboard/class-recordings`} icon={icons.recordings} label="Class Recording" exact />
+              <NavItem to={`/classes/${classId}/watch-history`} icon={icons.attend} label="Attendance" exact />
+            </SideSection>
           </>
-        )}
-
-        {user?.role === 'ADMIN' && (
+        ) : (
           <>
-            <SectionLabel label="Administration" />
-            <NavItem to="/admin" icon={icons.admin} label="Overview" />
-            <NavItem to="/admin/students" icon={icons.students} label="Students" />
-            <NavItem to="/admin/classes" icon={icons.classes} label="Manage Classes" />
-            <NavItem to="/admin/slips" icon={icons.slips} label="Payment Slips" />
-          </>
-        )}
+            {user && (
+              <SideSection label="Main">
+                <NavItem to="/dashboard" icon={icons.home} label="Dashboard" />
+              </SideSection>
+            )}
 
-        {!user && (
-          <>
-            <SectionLabel label="Account" />
-            <NavItem to="/login" icon={icons.login} label="Sign In" />
+            <SideSection label="Classes">
+              <NavItem to="/classes" icon={icons.classes} label="All Classes" />
+            </SideSection>
+
+            {user?.role === 'STUDENT' && (
+              <>
+                <SideSection label="Payments">
+                  <NavItem to="/payments/submit" icon={icons.upload} label="Upload Slip" />
+                  <NavItem to="/payments/my" icon={icons.pay} label="My Payments" />
+                </SideSection>
+                <SideSection label="Activity">
+                  <NavItem to="/watch-history" icon={icons.recordings} label="Watch History" />
+                </SideSection>
+              </>
+            )}
+
+            {user?.role === 'ADMIN' && (
+              <SideSection label="Administration">
+                <NavItem to="/admin" icon={icons.admin} label="Overview" />
+                <NavItem to="/admin/students" icon={icons.students} label="Students" />
+                <NavItem to="/admin/classes" icon={icons.classes} label="Manage Classes" />
+                <NavItem to="/admin/slips" icon={icons.slips} label="Payment Slips" />
+                <NavItem to="/admin/attendance" icon={icons.attend} label="Attendance" />
+                <NavItem to="/admin/recordings" icon={icons.recordings} label="Recordings" />
+              </SideSection>
+            )}
+
+            {!user && (
+              <SideSection label="Account">
+                <NavItem to="/login" icon={icons.login} label="Sign In" />
+              </SideSection>
+            )}
           </>
         )}
       </nav>
 
-      {/* Bottom */}
+      {/* Bottom: User profile + Logout */}
       {user && (
-        <div className="px-3 py-4 border-t border-slate-200 dark:border-white/10">
+        <div className="px-4 py-4 border-t border-slate-100 dark:border-white/8">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center flex-shrink-0 ring-2 ring-white dark:ring-slate-700 shadow">
+              <span className="text-white text-xs font-bold">{initials}</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] font-bold text-slate-800 dark:text-white truncate uppercase tracking-wide leading-tight">
+                {user.profile?.fullName || user.email}
+              </p>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate mt-0.5">
+                {user.role === 'ADMIN' ? 'Administrator' : 'Student'}
+              </p>
+            </div>
+          </div>
           <button onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-[13px] font-medium text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-300 transition-all duration-200">
-            <span className="w-5 h-5">{icons.logout}</span>
-            Sign Out
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 text-[13px] font-medium text-slate-600 dark:text-slate-300 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-500/30 transition-all duration-200 bg-white dark:bg-transparent">
+            <span className="w-4 h-4 flex-shrink-0">{icons.logout}</span>
+            Logout
           </button>
         </div>
       )}
@@ -159,7 +192,7 @@ export default function Layout() {
   return (
     <div className="flex h-screen overflow-hidden bg-[#f1f5f9] dark:bg-[#0b1120] transition-colors duration-300">
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex flex-col w-[260px] bg-white dark:bg-gradient-to-b dark:from-[#0f172a] dark:to-[#1e293b] flex-shrink-0 shadow-xl dark:shadow-2xl border-r border-slate-200 dark:border-transparent">
+      <aside className="hidden lg:flex flex-col w-[255px] bg-white dark:bg-gradient-to-b dark:from-[#0f172a] dark:to-[#1e293b] flex-shrink-0 shadow-lg dark:shadow-2xl border-r border-slate-100 dark:border-transparent">
         <SidebarContent />
       </aside>
 
@@ -167,7 +200,7 @@ export default function Layout() {
       {sidebarOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex">
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
-          <aside className="relative w-[280px] bg-white dark:bg-gradient-to-b dark:from-[#0f172a] dark:to-[#1e293b] flex flex-col shadow-2xl animate-slide-in">
+          <aside className="relative w-[270px] bg-white dark:bg-gradient-to-b dark:from-[#0f172a] dark:to-[#1e293b] flex flex-col shadow-2xl animate-slide-in">
             <SidebarContent />
           </aside>
         </div>
@@ -176,9 +209,9 @@ export default function Layout() {
       {/* Main area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top header */}
-        <header className="bg-white dark:bg-[#0f172a] h-16 flex items-center justify-between px-4 sm:px-6 flex-shrink-0 shadow-sm dark:shadow-black/20 z-10 border-b border-transparent dark:border-slate-800 transition-colors duration-300">
+        <header className="bg-white dark:bg-[#0f172a] h-14 flex items-center justify-between px-4 sm:px-6 flex-shrink-0 shadow-sm dark:shadow-black/20 z-10 border-b border-slate-100 dark:border-slate-800 transition-colors duration-300">
           {/* Left */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <button onClick={() => setSidebarOpen(true)}
               className="lg:hidden p-2 -ml-1 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition">
               <span className="w-5 h-5 block">{icons.menu}</span>
@@ -186,36 +219,31 @@ export default function Layout() {
             {user && (
               <div className="hidden sm:block">
                 <p className="text-[13px] font-semibold text-slate-800 dark:text-slate-100">{greeting}, {user.profile?.fullName?.split(' ')[0] || 'User'}!</p>
-                <p className="text-[11px] text-slate-400 dark:text-slate-500">{time.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</p>
+                <p className="text-[10px] text-slate-400 dark:text-slate-500">{time.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</p>
               </div>
             )}
           </div>
 
           {/* Right */}
           <div className="flex items-center gap-2">
-            {/* Theme toggle */}
-            <button onClick={toggleTheme}
-              className="p-2 rounded-xl text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200"
-              title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}>
-              <span className="w-5 h-5 block">{theme === 'light' ? icons.moon : icons.sun}</span>
-            </button>
-
             {!user ? (
-              <div className="flex gap-2">
-                <Link to="/login" className="px-5 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition">Login</Link>
-                <Link to="/register" className="px-5 py-2 text-sm font-semibold text-white bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-300">Register</Link>
-              </div>
+              <>
+                <button onClick={toggleTheme}
+                  className="p-2 rounded-xl text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200">
+                  <span className="w-5 h-5 block">{theme === 'light' ? icons.moon : icons.sun}</span>
+                </button>
+                <div className="flex gap-2">
+                  <Link to="/login" className="px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition">Login</Link>
+                  <Link to="/register" className="px-4 py-1.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-300">Register</Link>
+                </div>
+              </>
             ) : (
               <>
-                <button className="relative p-2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition">
+                <button className="relative p-2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition lg:hidden">
                   <span className="w-5 h-5 block">{icons.bell}</span>
                 </button>
-                <div className="hidden sm:flex items-center gap-2.5 pl-3 border-l border-slate-200 dark:border-slate-700">
-                  <div className="text-right">
-                    <p className="text-[13px] font-semibold text-slate-700 dark:text-slate-200 leading-tight">{user.profile?.fullName || user.email}</p>
-                    <p className="text-[10px] text-slate-400 dark:text-slate-500">{user.role === 'ADMIN' ? 'Administrator' : 'Student'}</p>
-                  </div>
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center ring-2 ring-white dark:ring-slate-800 shadow-lg">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center ring-2 ring-white dark:ring-slate-800 shadow">
                     <span className="text-white text-xs font-bold">{initials}</span>
                   </div>
                 </div>
